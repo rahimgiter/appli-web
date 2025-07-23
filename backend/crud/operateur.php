@@ -1,5 +1,5 @@
 <?php
-$conn = new PDO("mysql:host=localhost;dbname=couverture_reseau", "root", "");
+$conn = new PDO("mysql:host=localhost;dbname=reseau", "root", "");
 
 // ===== AJOUTER =====
 if (isset($_POST['action']) && $_POST['action'] === 'ajouter') {

@@ -1,0 +1,99 @@
+/* Conteneur principal */
+.utilisateurs-container {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Titre principal */
+.utilisateurs-container h4 {
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #0d6efd;
+}
+
+/* Tableau */
+.utilisateurs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.utilisateurs-table thead {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.utilisateurs-table th,
+.utilisateurs-table td {
+  padding: 12px 16px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.utilisateurs-table tbody tr:hover {
+  background-color: #f1f9ff;
+}
+
+/* Boutons d'action */
+.btn-action {
+  margin-right: 8px;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-edit {
+  background-color: #ffc107;
+  color: #000;
+  border: none;
+}
+
+.btn-edit:hover {
+  background-color: #e0a800;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+}
+
+.btn-delete:hover {
+  background-color: #b52a38;
+}
+
+/* Formulaire d'ajout / modification */
+.utilisateur-form {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+}
+
+.utilisateur-form h5 {
+  margin-bottom: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.utilisateur-form input,
+.utilisateur-form select {
+  margin-bottom: 15px;
+}
+
+.utilisateur-form .btn-submit {
+  background-color: #0d6efd;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+}
+
+.utilisateur-form .btn-submit:hover {
+  background-color: #0b5ed7;
+}

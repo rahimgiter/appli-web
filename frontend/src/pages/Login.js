@@ -19,8 +19,8 @@ function Login() {
 
     try {
       const response = await axios.post("http://localhost/app-web/backend/login.php", {
-        identifiant,
-        mot_de_passe: motDePasse
+        identifiant: identifiant.trim(),
+        mot_de_passe: motDePasse.trim()
       });
 
       if (response.data.success) {
@@ -31,7 +31,7 @@ function Login() {
           navigate("/dashboard");
         }, 1500);
       } else {
-        setNotification({ show: true, success: false, message: "Identifiants incorrects" });
+        setNotification({ show: true, success: false, message: response.data.message || "Identifiants incorrects" });
         setSecouer(true);
         setTimeout(() => {
           setSecouer(false);
@@ -61,7 +61,6 @@ function Login() {
 
       <div className={`shadow-lg p-5 bg-white rounded-4 form-box ${secouer ? 'shake' : ''}`} style={{ width: '100%', maxWidth: 400 }}>
         <div className="text-center mb-4">
-         
           <h3 className="fw-bold">Connexion</h3>
         </div>
 

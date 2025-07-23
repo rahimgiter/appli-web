@@ -1,0 +1,123 @@
+/* Card principale */
+.ajout-card {
+  max-width: 720px;
+  margin: 0 auto;
+  border: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.ajout-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 123, 255, 0.2);
+}
+
+/* Inputs custom */
+.input-style {
+  border: 1.5px solid #d1d7e0;
+  border-radius: 0.5rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.input-style:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+  outline: none;
+  background-color: #f8fbff;
+}
+
+/* Liste déroulante villages */
+.village-dropdown {
+  max-height: 220px;
+  background: white;
+  border: 1.5px solid #0d6efd;
+  border-radius: 0 0 0.5rem 0.5rem;
+  z-index: 1050;
+  box-shadow: 0 6px 15px rgba(13, 110, 253, 0.2);
+}
+
+.village-item {
+  padding: 0.6rem 1.2rem;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.village-item:hover,
+.village-item:focus {
+  background-color: #e7f1ff;
+  color: #0d6efd;
+}
+
+/* Bouton submit */
+.btn-hover {
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.btn-hover:hover {
+  background-color: #0b5ed7;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(11, 94, 215, 0.4);
+}
+
+/* Scroll barre */
+.village-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.village-dropdown::-webkit-scrollbar-thumb {
+  background-color: #0d6efd;
+  border-radius: 3px;
+}
+
+.village-dropdown::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.village-dropdown {
+  max-height: 200px;
+  z-index: 1000;
+}
+
+.village-item:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.input-style {
+  border-radius: 8px;
+}
+
+.ajout-card {
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+.zindex-dropdown {
+  z-index: 1000;
+}
+
+.custom-toast {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  background-color: #f8d7da;
+  color: #842029;
+  padding: 12px 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  font-weight: 500;
+  animation: fadeInOut 4s forwards;
+  z-index: 9999;
+}
+
+.custom-toast.success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(20px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(20px); }
+}

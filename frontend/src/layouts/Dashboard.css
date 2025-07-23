@@ -1,0 +1,141 @@
+/* ===== CONTAINER GLOBAL ===== */
+.dashboard-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  background-color: #052758;
+  color: white;
+  width: 60px;
+  transition: width 0.3s ease;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 100;
+  box-shadow: 3px 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.open {
+  width: 220px;
+}
+
+.sidebar-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.sidebar-footer {
+  padding: 0.5rem;
+}
+
+/* ===== ITEM SIDEBAR ===== */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  color: white;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.icon {
+  font-size: 1.4rem;
+  transition: transform 0.2s ease;
+}
+
+.sidebar-item:hover .icon {
+  transform: scale(1.15);
+}
+
+.label-text {
+  margin-left: 12px;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+/* ===== TOPBAR (collé et même couleur) ===== */
+.topbar {
+  height: 60px;
+  background-color: #052758;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.topbar h5 {
+  margin: 0;
+  font-weight: bold;
+}
+
+.topbar .btn {
+  color: white;
+}
+
+.topbar .btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.topbar .dropdown-toggle::after {
+  display: none;
+}
+
+.topbar img,
+.topbar .bi-person-circle {
+  border-radius: 50%;
+}
+
+/* ===== CONTENU PRINCIPAL ===== */
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  flex-grow: 1;
+  padding: 1.5rem;
+  background-color: #f5f7fa;
+  overflow-y: auto;
+}
+
+/* ===== SCROLL ===== */
+.content-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
