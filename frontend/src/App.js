@@ -9,6 +9,7 @@ import Archives from './pages/Archives';
 import Utilisateurs from './pages/Utilisateurs'; // ✅ import
 import Paramètres from './pages/Paramètres'; 
 import Rapports from './pages/Rapports'; 
+import Site from './pages/Site';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
@@ -30,6 +31,7 @@ function App() {
           <Route path="parametres" element={<Paramètres />} />
           <Route path="utilisateurs" element={<Utilisateurs />} /> {/* ✅ route ajoutée */}
           <Route path="rapports" element={<Rapports />} />
+          <Route path="/dashboard/sites" element={<Site />} />
         </Route>
       </Routes>
     </Router>

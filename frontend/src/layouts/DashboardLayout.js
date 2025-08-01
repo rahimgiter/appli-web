@@ -11,14 +11,15 @@ function DashboardLayout() {
   const location = useLocation();
 
   const navItems = [
-    { icon: 'bi-house-fill', label: 'Accueil', path: '/dashboard' },
-    { icon: 'bi-file-earmark-plus-fill', label: 'Ajout Infos', path: '/dashboard/ajout' },
-    { icon: 'bi-archive-fill', label: 'Mes archives', path: '/dashboard/archives', hasBadge: true },
-    { icon: 'bi bi-globe', label: 'Couverture', path: '/dashboard/couverture' },
-    { icon: 'bi-file-earmark-text-fill', label: 'Rapports', path: '/dashboard/rapports' },
-    { icon: 'bi-people-fill', label: 'Utilisateurs', path: '/dashboard/utilisateurs' },
-    { icon: 'bi bi-map-fill', label: 'Exploration régionale', path: '/dashboard/parametres' }
-  ];
+  { icon: 'bi-house-fill', label: 'Accueil', path: '/dashboard' },
+  { icon: 'bi-file-earmark-plus-fill', label: 'Ajout Infos', path: '/dashboard/ajout' },
+  { icon: 'bi-archive-fill', label: 'Mes archives', path: '/dashboard/archives', hasBadge: true },
+  { icon: 'bi-file-earmark-text-fill', label: 'Historique connexion', path: '/dashboard/rapports' },
+  { icon: 'bi-people-fill', label: 'Utilisateurs', path: '/dashboard/utilisateurs' },
+  { icon: 'bi-map-fill', label: 'Exploration régionale', path: '/dashboard/parametres' },
+  { icon: 'bi-hdd-rack-fill', label: 'Sites', path: '/dashboard/sites' } // ✅ Nouvelle ligne
+];
+
 
   const logoutItem = {
     icon: 'bi-box-arrow-right',
