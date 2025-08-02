@@ -18,11 +18,14 @@ $sql = "SELECT s.id_site,
                s.longitude_site,
                l.nom_localite,
                o.nom_operateur,
-               t.libelle_type AS type_site
+               t.libelle_type,
+               s.annee_site,
+               sem.libelle_semestre
         FROM site s
         JOIN localite l ON s.id_localite = l.id_localite
         JOIN operateur o ON s.id_operateur = o.id_operateur
         JOIN type_site t ON s.id_type_site = t.id_type_site
+        JOIN semestre sem ON s.id_semestre = sem.id_semestre
         ORDER BY s.id_site DESC";
 
 $result = $conn->query($sql);

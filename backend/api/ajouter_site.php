@@ -1,32 +1,30 @@
 <?php
-// CORS headers
+// CORS headers à mettre en tout début de fichier (avant tout echo)
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Content-Type: application/json; charset=utf-8");
+header("Access-Control-Allow-Headers: Content-Type");
 
-// Gestion de la requête OPTIONS (préflight)
+// Réponse rapide à la requête OPTIONS (= pré-vol)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Connexion à la base
+// Connexion base de données
 $conn = new mysqli("localhost", "root", "", "reseau");
-
 if ($conn->connect_error) {
     http_response_code(500);
     echo json_encode(["error" => "Erreur de connexion à la base de données"]);
     exit;
 }
 
-// Récupération des données JSON
+// Récupérer les données JSON envoyées
 $data = json_decode(file_get_contents("php://input"), true);
 
-// Vérification des champs
 if (
     !isset($data['nom_site'], $data['latitude_site'], $data['longitude_site'], 
-            $data['id_localite'], $data['id_operateur'], $data['id_type_site'])
+           $data['id_localite'], $data['id_operateur'], $data['id_type_site'],
+           $data['annee_site'], $data['id_semestre'])
 ) {
     http_response_code(400);
     echo json_encode(["error" => "Champs manquants"]);
@@ -39,24 +37,28 @@ $lon = $data['longitude_site'];
 $id_localite = $data['id_localite'];
 $id_operateur = $data['id_operateur'];
 $id_type_site = $data['id_type_site'];
+$annee = $data['annee_site'];
+$id_semestre = $data['id_semestre'];
 
-$sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site)
-        VALUES (?, ?, ?, ?, ?, ?)";
+// Préparer la requête SQL
+$sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site, annee_site, id_semestre)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
     http_response_code(500);
-    echo json_encode(["error" => "Erreur dans la requête SQL"]);
+    echo json_encode(["error" => "Erreur dans la requête SQL : " . $conn->error]);
     exit;
 }
 
-$stmt->bind_param("sddiii", $nom, $lat, $lon, $id_localite, $id_operateur, $id_type_site);
+// Ici, on suppose que annee_site est une chaîne (string), sinon adapter le type
+$stmt->bind_param("sddiiisi", $nom, $lat, $lon, $id_localite, $id_operateur, $id_type_site, $annee, $id_semestre);
 
 if ($stmt->execute()) {
     echo json_encode(["message" => "✅ Site ajouté avec succès"]);
 } else {
     http_response_code(500);
-    echo json_encode(["error" => "❌ Échec de l'ajout du site"]);
+    echo json_encode(["error" => "❌ Échec de l'ajout du site : " . $stmt->error]);
 }
 
 $stmt->close();
