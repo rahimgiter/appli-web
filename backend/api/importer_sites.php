@@ -16,7 +16,7 @@ if (
     !isset($_POST['id_operateur']) ||
     !isset($_POST['id_type_site']) ||
     !isset($_POST['annee_site']) ||
-    !isset($_POST['id_semestre'])
+    !isset($_POST['id_trimestre'])
 ) {
     http_response_code(400);
     echo json_encode(["error" => "Paramètres ou fichier manquants"]);
@@ -36,7 +36,7 @@ if ($conn->connect_error) {
 $id_operateur = intval($_POST['id_operateur']);
 $id_type_site = intval($_POST['id_type_site']);
 $annee_site = $_POST['annee_site'];
-$id_semestre = intval($_POST['id_semestre']);
+$id_trimestre = intval($_POST['id_trimestre']);
 
 $fileTmpPath = $_FILES['file']['tmp_name'];
 
@@ -71,10 +71,10 @@ try {
         $id_localite = $result->fetch_assoc()['id_localite'];
 
         // Insertion
-        $sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site, annee_site, id_semestre)
+        $sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site, annee_site, id_trimestre)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sddiiisi", $nom_site, $latitude_site, $longitude_site, $id_localite, $id_operateur, $id_type_site, $annee_site, $id_semestre);
+        $stmt->bind_param("sddiiisi", $nom_site, $latitude_site, $longitude_site, $id_localite, $id_operateur, $id_type_site, $annee_site, $id_trimestre);
 
         if ($stmt->execute()) {
             $inserted++;

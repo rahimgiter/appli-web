@@ -24,7 +24,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 if (
     !isset($data['nom_site'], $data['latitude_site'], $data['longitude_site'], 
            $data['id_localite'], $data['id_operateur'], $data['id_type_site'],
-           $data['annee_site'], $data['id_semestre'])
+           $data['annee_site'], $data['id_trimestre'])
 ) {
     http_response_code(400);
     echo json_encode(["error" => "Champs manquants"]);
@@ -38,10 +38,10 @@ $id_localite = $data['id_localite'];
 $id_operateur = $data['id_operateur'];
 $id_type_site = $data['id_type_site'];
 $annee = $data['annee_site'];
-$id_semestre = $data['id_semestre'];
+$id_trimestre = $data['id_trimestre'];
 
 // Préparer la requête SQL
-$sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site, annee_site, id_semestre)
+$sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site, annee_site, id_trimestre)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 
@@ -51,8 +51,7 @@ if (!$stmt) {
     exit;
 }
 
-// Ici, on suppose que annee_site est une chaîne (string), sinon adapter le type
-$stmt->bind_param("sddiiisi", $nom, $lat, $lon, $id_localite, $id_operateur, $id_type_site, $annee, $id_semestre);
+$stmt->bind_param("sddiiisi", $nom, $lat, $lon, $id_localite, $id_operateur, $id_type_site, $annee, $id_trimestre);
 
 if ($stmt->execute()) {
     echo json_encode(["message" => "✅ Site ajouté avec succès"]);

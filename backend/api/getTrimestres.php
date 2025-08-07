@@ -4,6 +4,7 @@ header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
+// Connexion
 $conn = new mysqli("localhost", "root", "", "reseau");
 
 if ($conn->connect_error) {
@@ -12,9 +13,11 @@ if ($conn->connect_error) {
   exit;
 }
 
-$sql = "SELECT * FROM semestre ORDER BY id_semestre";
+// Requête mise à jour pour la table "trimestre"
+$sql = "SELECT id_trimestre, libelle_trimestre FROM trimestre ORDER BY id_trimestre";
 $result = $conn->query($sql);
 
+// Traitement résultat
 $data = [];
 while ($row = $result->fetch_assoc()) {
   $data[] = $row;
@@ -22,4 +25,3 @@ while ($row = $result->fetch_assoc()) {
 
 echo json_encode($data, JSON_UNESCAPED_UNICODE);
 $conn->close();
-?>
