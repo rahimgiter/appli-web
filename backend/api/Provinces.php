@@ -1,6 +1,7 @@
 <?php
 // CORS & JSON headers
 header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 // Connexion à la base de données

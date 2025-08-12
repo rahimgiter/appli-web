@@ -1,0 +1,10 @@
+.list-hover-effect {
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.list-hover-effect:hover {
+  background-color: #f0f8ff;
+  transform: scale(1.03);
+}
+

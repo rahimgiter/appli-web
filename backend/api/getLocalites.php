@@ -2,6 +2,7 @@
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
+require_once 'cors.php';
 
 // Connexion à la base de données
 $conn = new mysqli("localhost", "root", "", "reseau");

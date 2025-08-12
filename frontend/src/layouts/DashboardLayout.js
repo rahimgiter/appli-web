@@ -5,106 +5,151 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Dashboard.css';
 
 function DashboardLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newArchiveCount, setNewArchiveCount] = useState(0);
+  const [tables, setTables] = useState([]);
+  const [settingOpen, setSettingOpen] = useState(false);
+  const [selectedMenu, setSelectedMenu] = useState('accueil');
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
-  { icon: 'bi-house-fill', label: 'Accueil', path: '/dashboard' },
-  { icon: 'bi-file-earmark-plus-fill', label: 'Ajout Infos', path: '/dashboard/ajout' },
-  { icon: 'bi-archive-fill', label: 'Mes archives', path: '/dashboard/archives', hasBadge: true },
-  { icon: 'bi-file-earmark-text-fill', label: 'Historique connexion', path: '/dashboard/rapports' },
-  { icon: 'bi-people-fill', label: 'Utilisateurs', path: '/dashboard/utilisateurs' },
-  { icon: 'bi-map-fill', label: 'Exploration régionale', path: '/dashboard/parametres' },
-  { icon: 'bi-hdd-rack-fill', label: 'Sites', path: '/dashboard/sites' } // ✅ Nouvelle ligne
-];
+    { icon: 'bi-house-fill', label: 'Accueil', path: '/dashboard' },
+    { icon: 'bi-file-earmark-plus-fill', label: 'Ajout Infos', path: '/dashboard/ajout' },
+    { icon: 'bi-archive-fill', label: 'Mes archives', path: '/dashboard/archives', hasBadge: true },
+    { icon: 'bi-file-earmark-text-fill', label: 'Historique connexion', path: '/dashboard/rapports' },
+    { icon: 'bi-people-fill', label: 'Utilisateurs', path: '/dashboard/utilisateurs' },
+    { icon: 'bi-map-fill', label: 'Exploration régionale', path: '/dashboard/exploration' },
+    { icon: 'bi-hdd-rack-fill', label: 'Sites', path: '/dashboard/sites' },
+  ];
 
+  useEffect(() => {
+    fetch("http://localhost/app-web/backend/api/list_tables.php")
+      .then(res => res.json())
+      .then(data => setTables(data.tables || []))
+      .catch(console.error);
+  }, []);
 
-  const logoutItem = {
-    icon: 'bi-box-arrow-right',
-    label: 'Déconnexion',
-    path: '/'
-  };
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/dashboard/setting')) {
+      setSelectedMenu('parametres');
+      setSettingOpen(true);
+    } else {
+      const matchedItem = navItems.find(item => item.path === path);
+      if (matchedItem) {
+        setSelectedMenu(matchedItem.label.toLowerCase());
+        setSettingOpen(false);
+      } else {
+        setSelectedMenu(null);
+        setSettingOpen(false);
+      }
+    }
+  }, [location.pathname]);
 
-  // ✅ Fonction de déconnexion
   const handleLogout = async () => {
     try {
-      await axios.get("http://localhost/app-web/backend/logout.php", {
-        withCredentials: true
-      });
+      await axios.get("http://localhost/app-web/backend/logout.php", { withCredentials: true });
       navigate('/');
     } catch (err) {
       console.error("Erreur lors de la déconnexion :", err);
     }
   };
 
- 
+  const handleClickMenu = (item) => {
+    setSelectedMenu(item.label.toLowerCase());
+    setSettingOpen(false);
+    navigate(item.path);
+  };
 
-  useEffect(() => {
-    if (location.pathname === '/dashboard/archives') {
-      setNewArchiveCount(0);
-    }
-  }, [location.pathname]);
+  const handleClickParametres = () => {
+    setSettingOpen(!settingOpen);
+    setSelectedMenu('parametres');
+  };
 
   return (
     <div className="d-flex dashboard-wrapper">
-      {/* === SIDEBAR === */}
-      <div
-        className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}
-        onMouseEnter={() => setSidebarOpen(true)}
-        onMouseLeave={() => setSidebarOpen(false)}
-      >
+      <div className="sidebar">
         <div className="sidebar-inner d-flex flex-column h-100">
+
           <div className="sidebar-header d-flex align-items-center justify-content-center py-3">
             <i className="bi bi-geo-fill text-white me-2 fs-5"></i>
-            {sidebarOpen && <span className="fw-bold text-white fs-6">Couverture360</span>}
+            <span className="fw-bold text-white fs-6">Couverture360</span>
           </div>
 
           <div className="sidebar-content flex-grow-1">
-            {navItems.map((item, index) => (
-              <div
-                key={index}
-                className={`sidebar-item small-text ${location.pathname === item.path ? 'active' : ''}`}
-                onClick={() => navigate(item.path)}
-                style={{ position: 'relative' }}
-              >
-                <i className={`bi ${item.icon} icon`}></i>
-                {sidebarOpen && <span className="label-text">{item.label}</span>}
+            {navItems.map((item) => {
+              const isActive = selectedMenu === item.label.toLowerCase();
+              return (
+                <div
+                  key={item.label}
+                  className={`sidebar-item small-text ${isActive ? 'active' : ''}`}
+                  onClick={() => handleClickMenu(item)}
+                  style={{ position: 'relative' }}
+                >
+                  <i className={`bi ${item.icon} icon`}></i>
+                  <span className="label-text">{item.label}</span>
+                  {item.hasBadge && newArchiveCount > 0 && (
+                    <span className="badge bg-danger text-white rounded-circle position-absolute top-0 end-0 translate-middle p-1 small">
+                      {newArchiveCount}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
 
-                {item.hasBadge && newArchiveCount > 0 && (
-                  <span className="badge bg-danger text-white rounded-circle position-absolute top-0 end-0 translate-middle p-1 small">
-                    {newArchiveCount}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+            {/* Paramètres */}
+            <div
+              className={`sidebar-item small-text parametres-item ${selectedMenu === 'parametres' ? 'selected-parent' : ''}`}
+              onClick={handleClickParametres}
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              <i className="bi bi-gear-fill icon"></i>
+              <span className="label-text">Paramètres</span>
+              <i
+                className={`bi ms-auto transition-icon ${settingOpen ? 'bi-caret-down-fill' : 'bi-caret-right-fill'}`}
+                style={{ fontSize: '1rem' }}
+              />
+            </div>
 
-          <div className="sidebar-footer mt-auto">
-            <div className="sidebar-item small-text" onClick={handleLogout}>
-              <i className={`bi ${logoutItem.icon} icon`}></i>
-              {sidebarOpen && <span className="label-text">{logoutItem.label}</span>}
+            {/* Sous-menu paramètres */}
+            <div className={`submenu ${settingOpen ? 'submenu-open' : ''}`}>
+              {tables.length === 0 && (
+                <div className="text-muted small">Chargement...</div>
+              )}
+              {tables.map((t) => {
+                const path = `/dashboard/setting/${t}`;
+                const active = location.pathname === path;
+                return (
+                  <div
+                    key={t}
+                    className={`sidebar-item small-text submenu-item ${active ? 'active' : ''}`}
+                    onClick={() => navigate(path)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <i className="bi bi-table icon"></i>
+                    <span className="label-text">{t}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
+
+          {/* FOOTER SUPPRIMÉ */}
+
         </div>
       </div>
 
-      {/* === MAIN + TOPBAR === */}
       <div className="main-area d-flex flex-column flex-grow-1">
         <div className="topbar d-flex justify-content-between align-items-center px-4 py-2">
-          <h5 className="m-0 fw-bold text-white">
-             Bienvenu(e)
-          </h5>
-
+          <h5 className="m-0 fw-bold text-white">Bienvenu(e)</h5>
           <div className="d-flex align-items-center gap-3">
-            <button className="btn text-white position-relative">
-              <i className="bi bi-bell fs-5"></i>
-              {newArchiveCount > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {newArchiveCount}
-                </span>
-              )}
+            {/* Bouton Déconnexion déplacé ici */}
+            <button
+              className="btn text-white position-relative"
+              onClick={handleLogout}
+            >
+              <i className="bi bi-box-arrow-right fs-5"></i>
             </button>
 
             <div className="dropdown">
@@ -117,8 +162,8 @@ function DashboardLayout() {
               </button>
               <ul className="dropdown-menu dropdown-menu-end">
                 <li>
-                  <span className="dropdown-item" onClick={() => navigate('/dashboard/parametres')}>
-                    Paramètres
+                  <span className="dropdown-item" onClick={() => navigate('/dashboard/exploration')}>
+                    Exploration
                   </span>
                 </li>
                 <li><hr className="dropdown-divider" /></li>
