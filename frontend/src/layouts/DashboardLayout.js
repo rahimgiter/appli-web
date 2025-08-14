@@ -9,6 +9,7 @@ function DashboardLayout() {
   const [tables, setTables] = useState([]);
   const [settingOpen, setSettingOpen] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState('accueil');
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Pour mobile
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,6 +61,7 @@ function DashboardLayout() {
     setSelectedMenu(item.label.toLowerCase());
     setSettingOpen(false);
     navigate(item.path);
+    setSidebarOpen(false); // Fermer sidebar mobile
   };
 
   const handleClickParametres = () => {
@@ -67,30 +69,32 @@ function DashboardLayout() {
     setSelectedMenu('parametres');
   };
 
-  return (
-    <div className="d-flex dashboard-wrapper">
-      <div className="sidebar">
-        <div className="sidebar-inner d-flex flex-column h-100">
+  // Toggle sidebar sur mobile
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-          <div className="sidebar-header d-flex align-items-center justify-content-center py-3">
-            <i className="bi bi-geo-fill text-white me-2 fs-5"></i>
-            <span className="fw-bold text-white fs-6">Couverture360</span>
+  return (
+    <>
+      {/* Sidebar */}
+      <div className={`sidebar ${sidebarOpen ? 'active' : ''}`}>
+        <div className="sidebar-inner">
+          <div className="sidebar-header">
+            <i className="bi bi-geo-fill fs-4"></i>
+            <span>Couverture360</span>
           </div>
 
-          <div className="sidebar-content flex-grow-1">
+          <div className="sidebar-content">
             {navItems.map((item) => {
               const isActive = selectedMenu === item.label.toLowerCase();
               return (
                 <div
                   key={item.label}
-                  className={`sidebar-item small-text ${isActive ? 'active' : ''}`}
+                  className={`sidebar-item ${isActive ? 'active' : ''}`}
                   onClick={() => handleClickMenu(item)}
-                  style={{ position: 'relative' }}
                 >
                   <i className={`bi ${item.icon} icon`}></i>
                   <span className="label-text">{item.label}</span>
                   {item.hasBadge && newArchiveCount > 0 && (
-                    <span className="badge bg-danger text-white rounded-circle position-absolute top-0 end-0 translate-middle p-1 small">
+                    <span className="badge bg-danger text-white rounded-circle p-1 ms-auto small">
                       {newArchiveCount}
                     </span>
                   )}
@@ -100,88 +104,94 @@ function DashboardLayout() {
 
             {/* Paramètres */}
             <div
-              className={`sidebar-item small-text parametres-item ${selectedMenu === 'parametres' ? 'selected-parent' : ''}`}
+              className={`sidebar-item parametres-item ${selectedMenu === 'parametres' ? 'selected-parent' : ''}`}
               onClick={handleClickParametres}
-              style={{ cursor: 'pointer', userSelect: 'none' }}
             >
               <i className="bi bi-gear-fill icon"></i>
               <span className="label-text">Paramètres</span>
-              <i
-                className={`bi ms-auto transition-icon ${settingOpen ? 'bi-caret-down-fill' : 'bi-caret-right-fill'}`}
-                style={{ fontSize: '1rem' }}
-              />
+              <i className={`bi ms-auto ${settingOpen ? 'bi-caret-down-fill' : 'bi-caret-right-fill'}`} />
             </div>
 
-            {/* Sous-menu paramètres */}
+            {/* Sous-menu */}
             <div className={`submenu ${settingOpen ? 'submenu-open' : ''}`}>
-              {tables.length === 0 && (
-                <div className="text-muted small">Chargement...</div>
+              {tables.length === 0 ? (
+                <div className="text-muted small px-2">Chargement...</div>
+              ) : (
+                tables.map((t) => {
+                  const path = `/dashboard/setting/${t}`;
+                  const active = location.pathname === path;
+                  return (
+                    <div
+                      key={t}
+                      className={`sidebar-item submenu-item ${active ? 'active' : ''}`}
+                      onClick={() => navigate(path)}
+                    >
+                      <i className="bi bi-table icon"></i>
+                      <span className="label-text">{t}</span>
+                    </div>
+                  );
+                })
               )}
-              {tables.map((t) => {
-                const path = `/dashboard/setting/${t}`;
-                const active = location.pathname === path;
-                return (
-                  <div
-                    key={t}
-                    className={`sidebar-item small-text submenu-item ${active ? 'active' : ''}`}
-                    onClick={() => navigate(path)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <i className="bi bi-table icon"></i>
-                    <span className="label-text">{t}</span>
-                  </div>
-                );
-              })}
             </div>
           </div>
-
-          {/* FOOTER SUPPRIMÉ */}
-
         </div>
       </div>
 
-      <div className="main-area d-flex flex-column flex-grow-1">
-        <div className="topbar d-flex justify-content-between align-items-center px-4 py-2">
-          <h5 className="m-0 fw-bold text-white">Bienvenu(e)</h5>
-          <div className="d-flex align-items-center gap-3">
-            {/* Bouton Déconnexion déplacé ici */}
+      {/* Overlay mobile */}
+      <div
+        className={`mobile-sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      {/* Main Area */}
+      <div className="main-area">
+        <div className="topbar">
+          <h5>Bienvenu(e)</h5>
+          <div className="d-flex align-items-center gap-2">
+            {/* Hamburger pour mobile */}
             <button
-              className="btn text-white position-relative"
-              onClick={handleLogout}
+              className="btn d-md-none text-primary"
+              onClick={toggleSidebar}
             >
+              <i className="bi bi-list fs-4"></i>
+            </button>
+
+            {/* Déconnexion */}
+            <button className="btn" onClick={handleLogout}>
               <i className="bi bi-box-arrow-right fs-5"></i>
             </button>
 
+            {/* Profil */}
             <div className="dropdown">
               <button
-                className="btn text-white dropdown-toggle d-flex align-items-center"
+                className="btn dropdown-toggle d-flex align-items-center"
                 type="button"
                 data-bs-toggle="dropdown"
               >
-                <i className="bi bi-person-circle fs-4"></i>
+                <i className="bi bi-person-circle fs-4 text-primary"></i>
               </button>
               <ul className="dropdown-menu dropdown-menu-end">
                 <li>
-                  <span className="dropdown-item" onClick={() => navigate('/dashboard/exploration')}>
+                  <button className="dropdown-item" onClick={() => navigate('/dashboard/exploration')}>
                     Exploration
-                  </span>
+                  </button>
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <span className="dropdown-item text-danger" onClick={handleLogout}>
+                  <button className="dropdown-item text-danger" onClick={handleLogout}>
                     Déconnexion
-                  </span>
+                  </button>
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        <div className="content-wrapper p-3 bg-light flex-grow-1 overflow-auto">
+        <div className="content-wrapper">
           <Outlet />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
