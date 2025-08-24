@@ -1,0 +1,49 @@
+.popup-notif {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  animation: fadeSlide 0.3s ease;
+  z-index: 9999;
+  font-size: 1rem;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.popup-notif.success {
+  background-color: #d1f7e3;
+  color: #198754;
+}
+
+.popup-notif.error {
+  background-color: #f8d7da;
+  color: #dc3545;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Shake animation */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+}
+
+.shake {
+  animation: shake 0.4s;
+}

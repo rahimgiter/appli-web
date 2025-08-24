@@ -1,0 +1,55 @@
+/* Fond animé */
+.accueil-bg {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background-size: 400% 400%;
+  animation: gradientFlow 10s ease infinite;
+}
+
+/* Animation gradient */
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Animation du contenu */
+.fade-in {
+  animation: fadeInUp 1.5s ease forwards;
+  opacity: 0;
+}
+
+/* Animation titre */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-title {
+  animation: popTitle 1s ease;
+}
+
+@keyframes popTitle {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Icône animée */
+.geo-icon i {
+  font-size: 4rem;
+  animation: blink-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes blink-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.start-btn {
+  transition: all 0.3s ease;
+  border: 2px solid white;
+}
+
+.start-btn:hover {
+  background-color: white;
+  color: #2a5298;
+}

@@ -1,0 +1,12 @@
+.archive-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background-color: #fefefe;
+}
+
+.archive-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 123, 255, 0.2);
+}

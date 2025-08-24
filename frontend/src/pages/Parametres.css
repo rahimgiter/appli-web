@@ -1,0 +1,37 @@
+/* Mode sombre global */
+.dark-mode {
+  background-color: #1a1a1a !important;
+  color: #f0f0f0 !important;
+}
+
+.dark-mode .form-control,
+.dark-mode .form-select,
+.dark-mode .accordion-button {
+  background-color: #2a2a2a;
+  color: white;
+  border-color: #444;
+}
+
+.dark-mode .accordion-button:not(.collapsed) {
+  background-color: #343a40;
+}
+
+.dark-mode .accordion-body {
+  background-color: #2a2a2a;
+}
+
+.dark-mode .btn {
+  border: none;
+}
+
+.dark-mode .btn-primary {
+  background-color: #2563eb;
+}
+
+.dark-mode .btn-success {
+  background-color: #22c55e;
+}
+
+.dark-mode .form-check-label {
+  color: white;
+}
