@@ -1,0 +1,78 @@
+/* Styles pour la carte Leaflet */
+.leaflet-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Animation pour les marqueurs */
+.custom-marker div {
+  transition: all 0.2s ease;
+}
+
+.custom-marker:hover div {
+  transform: scale(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Styles pour les tooltips personnalisés */
+.custom-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.custom-tooltip::before {
+  display: none !important;
+}
+
+/* Animation pour les tooltips */
+.leaflet-tooltip {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.leaflet-tooltip.leaflet-tooltip-top {
+  opacity: 1;
+}
+
+/* Amélioration de l'apparence des tooltips */
+.leaflet-tooltip-content {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+/* Effet de survol sur les marqueurs */
+.custom-marker:hover {
+  cursor: pointer;
+}
+
+.custom-marker:hover div {
+  transform: scale(1.3);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}

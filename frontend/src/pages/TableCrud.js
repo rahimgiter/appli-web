@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 
 function formatForInput(val, type) {
   if (!val) return '';
@@ -77,10 +78,10 @@ export default function TableCrud({ table }) {
           fetchRows(1);
           setForm({});
         } else {
-          alert('Erreur création: ' + JSON.stringify(res));
+          toast.error('Erreur création: ' + JSON.stringify(res));
         }
       })
-      .catch(err => { console.error(err); alert('Erreur'); });
+      .catch(err => { console.error(err); toast.error('Erreur'); });
   };
 
   const startEdit = (row) => {
@@ -95,7 +96,7 @@ export default function TableCrud({ table }) {
 
   const submitEdit = (e) => {
     e.preventDefault();
-    if (!pkName) return alert('Pas de PK défini - impossible modifier');
+    if (!pkName) return toast.error('Pas de PK défini - impossible modifier');
 
     const payload = { ...form };
     schema.forEach(col => {
@@ -117,14 +118,14 @@ export default function TableCrud({ table }) {
           setForm({});
           setEditingPk(null);
         } else {
-          alert('Erreur update: ' + JSON.stringify(res));
+          toast.error('Erreur update: ' + JSON.stringify(res));
         }
       })
-      .catch(err => { console.error(err); alert('Erreur'); });
+      .catch(err => { console.error(err); toast.error('Erreur'); });
   };
 
   const confirmDelete = (row) => {
-    if (!pkName) return alert('Pas de PK - suppression impossible');
+    if (!pkName) return toast.error('Pas de PK - suppression impossible');
     if (!window.confirm('Supprimer cette ligne ?')) return;
 
     fetch(`${API_BASE}/records.php?table=${encodeURIComponent(table)}`, {
@@ -135,13 +136,36 @@ export default function TableCrud({ table }) {
       .then(r => r.json())
       .then(res => {
         if (res.success) fetchRows(page);
-        else alert('Erreur suppression');
+        else toast.error('Erreur suppression');
       })
-      .catch(err => { console.error(err); alert('Erreur'); });
+      .catch(err => { console.error(err); toast.error('Erreur'); });
   };
 
   return (
-    <div className="card p-3 mb-5">
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
+      <div className="card p-3 mb-5">
       {/* Formulaire CRUD */}
       <form onSubmit={editingPk ? submitEdit : createRow}>
         <div className="row">
@@ -250,6 +274,7 @@ export default function TableCrud({ table }) {
           <button className="btn btn-sm btn-outline-secondary" disabled={page >= Math.ceil(total / pageSize)} onClick={() => fetchRows(page + 1)}>Next</button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

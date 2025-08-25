@@ -18,12 +18,12 @@ if ($conn->connect_error) {
 $id_commune = isset($_GET['id_departement']) ? intval($_GET['id_departement']) : null;
 
 if ($id_commune) {
-    $stmt = $conn->prepare("SELECT id_localite, nom_localite, id_departement FROM localite WHERE id_departement = ?");
+    $stmt = $conn->prepare("SELECT id_localite, nom_localite, latitude, longitude, id_departement, hommes, femmes, pop_total FROM localite WHERE id_departement = ?");
     $stmt->bind_param("i", $id_commune);
     $stmt->execute();
     $result = $stmt->get_result();
 } else {
-    $result = $conn->query("SELECT id_localite, nom_localite, id_departement FROM localite");
+    $result = $conn->query("SELECT id_localite, nom_localite, latitude, longitude, id_departement, hommes, femmes, pop_total FROM localite");
 }
 
 $localites = [];

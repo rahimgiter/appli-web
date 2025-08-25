@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
+import toast, { Toaster } from 'react-hot-toast';
 import { Modal } from 'bootstrap';
 import FormulaireInfos from '../components/FormulaireInfos';
 
@@ -175,7 +176,7 @@ const ExplorationRegionale = () => {
     axios
       .post(url, dataToSend)
       .then(() => {
-        alert('✅ Formulaire sauvegardé !');
+        toast.success('✅ Formulaire sauvegardé !');
         Modal.getInstance(document.getElementById('villageModal')).hide();
       })
       .catch((err) => {
@@ -188,7 +189,30 @@ const ExplorationRegionale = () => {
   );
 
   return (
-    <div className="container mt-4">
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
+      <div className="container mt-4">
       <h3 className="fw-bold mb-4 text-primary">🌍 Exploration Régionale</h3>
 
       <div className="row mb-4">
@@ -278,7 +302,8 @@ const ExplorationRegionale = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

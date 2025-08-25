@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Utilisateurs.css';
+import toast, { Toaster } from 'react-hot-toast';
 
 const Utilisateurs = () => {
   const [utilisateurs, setUtilisateurs] = useState([]);
@@ -43,7 +44,7 @@ const Utilisateurs = () => {
           fetchUtilisateurs();
           resetForm();
         } else {
-          alert("Erreur : " + res.data.message);
+          toast.error("Erreur : " + res.data.message);
         }
       })
       .catch(err => console.error(err));
@@ -63,9 +64,9 @@ const Utilisateurs = () => {
         .then(res => {
           if (res.data.success) {
             fetchUtilisateurs();
-          } else {
-            alert("Erreur : " + res.data.message);
-          }
+                  } else {
+          toast.error("Erreur : " + res.data.message);
+        }
         })
         .catch(err => console.error(err));
     }
@@ -86,7 +87,30 @@ const Utilisateurs = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
+      <div className="container mt-4">
       <h4 className="fw-bold text-primary mb-4">
         <i className="bi bi-people-fill me-2"></i> Gestion des utilisateurs
       </h4>
@@ -180,7 +204,8 @@ const Utilisateurs = () => {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 };
 

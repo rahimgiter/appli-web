@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import { Modal } from 'bootstrap';
 import FormulaireInfos from '../components/FormulaireInfos';
+import toast, { Toaster } from 'react-hot-toast';
 
 const ExplorationRegionale = () => {
   const [regions, setRegions] = useState([]);
@@ -139,13 +140,13 @@ const ExplorationRegionale = () => {
   // Filtrage des localités selon la sélection
   useEffect(() => {
     if (selectedDepartement) {
-      const departement = departements.find(d => d.id_departement === selectedDepartement);
+      const departement = departements.find(d => String(d.id_departement) === selectedDepartement);
       setTitre(`Localités du département : ${departement?.nom_departement || ''}`);
     } else if (selectedProvince) {
-      const province = provinces.find(p => p.id_province === selectedProvince);
+      const province = provinces.find(p => String(p.id_province) === selectedProvince);
       setTitre(`Localités de la province : ${province?.nom_province || ''}`);
     } else if (selectedRegion) {
-      const region = regions.find(r => r.id_region === selectedRegion);
+      const region = regions.find(r => String(r.id_region) === selectedRegion);
       setTitre(`Localités de la région : ${region?.nom_region || ''}`);
     } else {
       setTitre('Toutes les localités');
@@ -292,7 +293,7 @@ const ExplorationRegionale = () => {
     axios
       .post(url, dataToSend)
       .then(() => {
-        alert('✅ Formulaire sauvegardé !');
+        toast.success('✅ Formulaire sauvegardé !');
         Modal.getInstance(document.getElementById('localiteModal')).hide();
       })
       .catch((err) => {
@@ -305,7 +306,30 @@ const ExplorationRegionale = () => {
   );
 
   return (
-    <div className="container mt-4">
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
+      <div className="container mt-4">
       <h3 className="fw-bold mb-4 text-primary">🌍 Exploration Régionale</h3>
 
       <div className="row mb-4">
@@ -351,24 +375,24 @@ const ExplorationRegionale = () => {
           <thead className="table-primary text-center">
             <tr>
               <th>Nom de la localité</th>
-              <th>Département</th>
-              <th>Province</th>
-              <th>Région</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+              <th>Hommes</th>
+              <th>Femmes</th>
+              <th>Population Total</th>
             </tr>
           </thead>
           <tbody>
             {filteredLocalites.map((l) => {
-              const departement = departements.find(d => d.id_departement == l.id_departement);
-              const province = departement ? provinces.find(p => p.id_province == departement.id_province) : null;
-              const region = province ? regions.find(r => r.id_region == province.id_region) : null;
-              
               return (
                 <tr key={l.id_localite} onClick={() => handleLocaliteClick(l)} style={{ cursor: 'pointer' }}>
                   <td>{l.nom_localite}</td>
-                  <td>{departement?.nom_departement || 'N/A'}</td>
-                  <td>{province?.nom_province || 'N/A'}</td>
-                  <td>{region?.nom_region || 'N/A'}</td>
-                </tr>
+                  <td className="text-center">{l.latitude || 'N/A'}</td>
+                  <td className="text-center">{l.longitude || 'N/A'}</td>
+                  <td className="text-center">{l.hommes || 'N/A'}</td>
+                  <td className="text-center">{l.femmes || 'N/A'}</td>
+                  <td className="text-center fw-bold">{l.pop_total || 'N/A'}</td>
+              </tr>
               );
             })}
           </tbody>
@@ -401,7 +425,8 @@ const ExplorationRegionale = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -119,7 +119,20 @@ try {
 
         $id_localite = $result->fetch_assoc()['id_localite'];
 
-        // Insertion du site
+        // Vérifier si le site existe déjà (doublon)
+        $checkSql = "SELECT id_site FROM site WHERE nom_site = ? AND id_localite = ? AND id_operateur = ? AND id_type_site = ? AND annee_site = ?";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bind_param("siiis", $nom_site, $id_localite, $id_operateur, $id_type_site, $annee_site);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+
+        if ($checkResult->num_rows > 0) {
+            // Site déjà existant, ignorer
+            $skipped++;
+            continue;
+        }
+
+        // Insertion du site (pas de doublon)
         $sql = "INSERT INTO site (nom_site, latitude_site, longitude_site, id_localite, id_operateur, id_type_site, annee_site, id_trimestre)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
@@ -135,7 +148,12 @@ try {
     echo json_encode([
         "message" => "✅ Import terminé",
         "importés" => $inserted,
-        "ignorés" => $skipped
+        "ignorés" => $skipped,
+        "details" => [
+            "sites_ajoutés" => $inserted,
+            "doublons_ignorés" => $skipped,
+            "total_traités" => $inserted + $skipped
+        ]
     ]);
 
 } catch (Exception $e) {

@@ -4,6 +4,7 @@ import axios from 'axios';
 import './Archives.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
+import toast, { Toaster } from 'react-hot-toast';
 import * as bootstrap from 'bootstrap';
 import FormulaireInfos from '../components/FormulaireInfos';
 
@@ -85,7 +86,7 @@ const Archives = ({ onRead = () => {} }) => {
           fetchArchives();
           bootstrap.Modal.getInstance(document.getElementById('archiveModal')).hide();
         } else {
-          alert("Erreur lors de l'enregistrement : " + res.data.message);
+          toast.error("Erreur lors de l'enregistrement : " + res.data.message);
         }
       })
       .catch(err => console.error("Erreur update", err));
@@ -99,7 +100,7 @@ const Archives = ({ onRead = () => {} }) => {
             setArchives(prev => prev.filter(a => a.id !== selectedForm.id));
             bootstrap.Modal.getInstance(document.getElementById('archiveModal')).hide();
           } else {
-            alert("Erreur suppression : " + res.data.message);
+            toast.error("Erreur suppression : " + res.data.message);
           }
         })
         .catch(err => console.error("Erreur suppression", err));
@@ -107,7 +108,30 @@ const Archives = ({ onRead = () => {} }) => {
   };
 
   return (
-    <div className="container mt-4">
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
+      <div className="container mt-4">
       <h4 className="fw-bold text-primary mb-4">
         <i className="bi bi-archive-fill me-2"></i>
         Fichiers enregistrés
@@ -191,7 +215,8 @@ const Archives = ({ onRead = () => {} }) => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

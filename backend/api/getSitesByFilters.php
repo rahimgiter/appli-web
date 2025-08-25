@@ -20,7 +20,8 @@ try {
         SELECT 
             s.id_site, s.nom_site, s.latitude_site, s.longitude_site, s.annee_site,
             s.id_localite, s.id_operateur, s.id_type_site, s.id_trimestre,
-            l.nom_localite, d.nom_departement, p.nom_province, r.nom_region,
+            l.nom_localite, l.hommes, l.femmes, l.pop_total,
+            d.nom_departement, p.nom_province, r.nom_region,
             o.nom_operateur, t.libelle_type, tr.libelle_trimestre
         FROM site s
         INNER JOIN localite l ON s.id_localite = l.id_localite
