@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import MapView from "../components/MapView";
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import toast, { Toaster } from 'react-hot-toast';
 
 // Configuration Axios
@@ -64,19 +63,19 @@ const Sites = () => {
   // Fonctions utilitaires pour la hiérarchie géographique
   const getDepartementFromLocalite = useCallback((locId) => {
     if (!locId) return null;
-    const loc = localite.find(l => l.id_localite == locId);
+    const loc = localite.find(l => l.id_localite === locId);
     return loc ? loc.id_departement : null;
   }, [localite]);
 
   const getProvinceFromDepartement = useCallback((depId) => {
     if (!depId) return null;
-    const dep = departements.find(d => d.id_departement == depId);
+    const dep = departements.find(d => d.id_departement === depId);
     return dep ? dep.id_province : null;
   }, [departements]);
 
   const getRegionFromProvince = useCallback((provId) => {
     if (!provId) return null;
-    const prov = provinces.find(p => p.id_province == provId);
+    const prov = provinces.find(p => p.id_province === provId);
     return prov ? prov.id_region : null;
   }, [provinces]);
 
@@ -92,9 +91,9 @@ const Sites = () => {
 
   const getRegionFromDepartement = useCallback((depId) => {
     if (!depId) return null;
-    const dep = departements.find(d => d.id_departement == depId);
+    const dep = departements.find(d => d.id_departement === depId);
     if (!dep) return null;
-    const prov = provinces.find(p => p.id_province == dep.id_province);
+    const prov = provinces.find(p => p.id_province === dep.id_province);
     return prov ? prov.id_region : null;
   }, [departements, provinces]);
 
@@ -238,25 +237,25 @@ Type : ${site.libelle_type}`);
     let filtersApplied = [];
     // Filtres géographiques
     if (filters.localite) {
-      const local = localite.find(l => l.id_localite == filters.localite);
+      const local = localite.find(l => l.id_localite === filters.localite);
       if (local) {
         title = `Sites de télécommunication de ${local.nom_localite}`;
         filtersApplied.push(`Localité: ${local.nom_localite}`);
       }
     } else if (filters.departement) {
-      const dep = departements.find(d => d.id_departement == filters.departement);
+      const dep = departements.find(d => d.id_departement === filters.departement);
       if (dep) {
         title = `Sites de télécommunication du département ${dep.nom_departement}`;
         filtersApplied.push(`Département: ${dep.nom_departement}`);
       }
     } else if (filters.province) {
-      const prov = provinces.find(p => p.id_province == filters.province);
+      const prov = provinces.find(p => p.id_province === filters.province);
       if (prov) {
         title = `Sites de télécommunication de la province ${prov.nom_province}`;
         filtersApplied.push(`Province: ${prov.nom_province}`);
       }
     } else if (filters.region) {
-      const reg = regions.find(r => r.id_region == filters.region);
+      const reg = regions.find(r => r.id_region === filters.region);
       if (reg) {
         title = `Sites de télécommunication de la région ${reg.nom_region}`;
         filtersApplied.push(`Région: ${reg.nom_region}`);
@@ -266,13 +265,13 @@ Type : ${site.libelle_type}`);
     }
     // Filtres additionnels
     if (filters.operateur) {
-      const op = operateurs.find(o => o.id_operateur == filters.operateur);
+      const op = operateurs.find(o => o.id_operateur === filters.operateur);
       if (op) {
         filtersApplied.push(`Opérateur: ${op.nom_operateur}`);
       }
     }
     if (filters.technologie) {
-      const tech = typeSites.find(t => t.id_type_site == filters.technologie);
+      const tech = typeSites.find(t => t.id_type_site === filters.technologie);
       if (tech) {
         filtersApplied.push(`Technologie: ${tech.libelle_type}`);
       }
@@ -321,7 +320,7 @@ Type : ${site.libelle_type}`);
           <div class="title">${title}</div>
           <div class="stats">
             <strong>Total des sites :</strong> ${sites.length} site${sites.length > 1 ? 's' : ''}
-            ${filtersApplied.length > 0 ? `<br><br><strong>Filtres appliqués :</strong><br>${filtersApplied.map(filter => `• ${filter}`).join('<br>')}` : ''}
+            ${filtersApplied.length > 0 ? `<br><br><strong>Informations spécifiques :</strong><br>${filtersApplied.map(filter => `• ${filter}`).join('<br>')}` : ''}
           </div>
           <table>
             <thead>
@@ -367,11 +366,13 @@ Type : ${site.libelle_type}`);
       month: 'long',
       day: 'numeric'
     });
+
     try {
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       pdf.setFont('helvetica');
       pdf.setFontSize(16);
 
+      // En-tête
       pdf.setTextColor(79, 70, 229);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Couverture360', 15, 20);
@@ -379,83 +380,130 @@ Type : ${site.libelle_type}`);
       pdf.setFontSize(12);
       pdf.text(currentDate, 250, 20);
 
+      // Titre principal
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
       const titleWidth = pdf.getTextWidth(title);
       pdf.text(title, (297 - titleWidth) / 2, 40);
 
+      // Statistiques globales
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'normal');
       let yPosStats = 55;
       pdf.text(`Total des sites : ${sites.length} site${sites.length > 1 ? 's' : ''}`, 15, yPosStats);
 
-      if (filtersApplied.length > 0) {
-        yPosStats += 10;
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Filtres appliqués :', 15, yPosStats);
-        yPosStats += 8;
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
-        filtersApplied.forEach(filter => {
-          pdf.text(`• ${filter}`, 20, yPosStats);
-          yPosStats += 6;
-        });
-        pdf.setFontSize(12);
-      }
+      
 
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      const headers = ['Nom du site', 'Localisation', 'Localité', 'Hommes', 'Femmes', 'Population totale'];
-      const columnWidths = [40, 35, 35, 25, 25, 35];
-      let xPos = 15;
-      const tableYStart = yPosStats + 15;
-
-      headers.forEach((header, index) => {
-        pdf.text(header, xPos, tableYStart);
-        xPos += columnWidths[index];
+      // Organiser les sites par opérateur et technologie
+      const sitesByOperatorAndTech = {};
+      sites.forEach(site => {
+        const opKey = site.nom_operateur || 'Non défini';
+        const techKey = site.libelle_type || 'Non défini';
+        
+        if (!sitesByOperatorAndTech[opKey]) {
+          sitesByOperatorAndTech[opKey] = {};
+        }
+        if (!sitesByOperatorAndTech[opKey][techKey]) {
+          sitesByOperatorAndTech[opKey][techKey] = [];
+        }
+        sitesByOperatorAndTech[opKey][techKey].push(site);
       });
-      pdf.line(15, tableYStart + 5, 282, tableYStart + 5);
 
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'normal');
-      let yPos = tableYStart + 15;
-      sites.forEach((site, index) => {
+      // Configuration du tableau
+      const headers = ['Nom du site', 'Localisation', 'Localité', 'Population'];
+      const columnWidths = [60, 50, 50, 35];
+      let yPos = yPosStats + 20;
+
+      // Parcourir les opérateurs
+      for (const [operateur, techGroups] of Object.entries(sitesByOperatorAndTech)) {
+        // Pour chaque nouvelle page
         if (yPos > 180) {
           pdf.addPage();
           yPos = 20;
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'bold');
-          xPos = 15;
-          headers.forEach((header, headerIndex) => {
-            pdf.text(header, xPos, yPos);
-            xPos += columnWidths[headerIndex];
-          });
-          pdf.line(15, yPos + 5, 282, yPos + 5);
-          yPos += 15;
-          pdf.setFontSize(8);
-          pdf.setFont('helvetica', 'normal');
         }
-        xPos = 15;
-        const rowData = [
-          site.nom_site || 'N/A',
-          `${site.latitude_site || 'N/A'}, ${site.longitude_site || 'N/A'}`,
-          site.nom_localite || 'N/A',
-          site.hommes || 'N/A',
-          site.femmes || 'N/A',
-          site.pop_total || 'N/A'
-        ];
-        rowData.forEach((data, colIndex) => {
-          let text = data.toString();
-          const maxWidth = columnWidths[colIndex] - 2;
-          while (pdf.getTextWidth(text) > maxWidth && text.length > 0) {
-            text = text.slice(0, -1);
-          }
-          pdf.text(text, xPos, yPos);
-          xPos += columnWidths[colIndex];
-        });
+
+        // Titre de l'opérateur
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(79, 70, 229);
+        pdf.text(`Opérateur : ${operateur}`, 15, yPos);
         yPos += 8;
-      });
+
+        // Parcourir les technologies
+        for (const [tech, sitesList] of Object.entries(techGroups)) {
+          if (yPos > 180) {
+            pdf.addPage();
+            yPos = 20;
+          }
+
+          // Sous-titre de la technologie
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(`Technologie : ${tech} (${sitesList.length} sites)`, 15, yPos);
+          yPos += 10;
+
+          // En-têtes du tableau
+          const headers = ['Nom du site', 'Localisation', 'Localité', 'Hommes', 'Femmes', 'Pop. totale'];
+          const columnWidths = [50, 45, 45, 30, 30, 35];
+          let xPos = 15;
+          pdf.setFontSize(10);
+          headers.forEach((header, index) => {
+            pdf.text(header, xPos, yPos);
+            xPos += columnWidths[index];
+          });
+          pdf.line(15, yPos + 2, 282, yPos + 2);
+          yPos += 8;
+
+          // Données des sites
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(8);
+          
+          sitesList.forEach(site => {
+            if (yPos > 180) {
+              pdf.addPage();
+              yPos = 20;
+              // Répéter les en-têtes
+              xPos = 15;
+              pdf.setFontSize(10);
+              pdf.setFont('helvetica', 'bold');
+              headers.forEach((header, index) => {
+                pdf.text(header, xPos, yPos);
+                xPos += columnWidths[index];
+              });
+              pdf.line(15, yPos + 2, 282, yPos + 2);
+              yPos += 8;
+              pdf.setFont('helvetica', 'normal');
+              pdf.setFontSize(8);
+            }
+
+            xPos = 15;
+            const rowData = [
+              site.nom_site || 'N/A',
+              `${site.latitude_site || 'N/A'}, ${site.longitude_site || 'N/A'}`,
+              site.nom_localite || 'N/A',
+              site.hommes || 'N/A',
+              site.femmes || 'N/A',
+              site.pop_total || 'N/A'
+            ];
+
+            rowData.forEach((data, colIndex) => {
+              let text = data.toString();
+              const maxWidth = columnWidths[colIndex] - 2;
+              while (pdf.getTextWidth(text) > maxWidth && text.length > 0) {
+                text = text.slice(0, -1);
+              }
+              pdf.text(text, xPos, yPos);
+              xPos += columnWidths[colIndex];
+            });
+            yPos += 6;
+          });
+          yPos += 15;
+        }
+        yPos += 10;
+      }
+
       pdf.save(`sites_telecom_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error);
@@ -985,7 +1033,7 @@ Type : ${site.libelle_type}`);
                   </label>
                   <div className="d-flex flex-wrap gap-3">
                     {typeSites.map(t => {
-                      const isActive = filters.technologie == t.id_type_site;
+                      const isActive = filters.technologie === t.id_type_site;
                       return (
                         <div key={t.id_type_site} className="d-flex align-items-center gap-2">
                           <span style={{ fontSize: "0.9rem", color: "#4b5563", minWidth: "50px" }}>
