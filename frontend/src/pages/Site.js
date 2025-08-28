@@ -122,65 +122,93 @@ const Sites = () => {
   const handleLocaliteChange = useCallback((e) => {
     const value = e.target.value || null;
     if (value) {
-      const depId = getDepartementFromLocalite(value);
-      const provId = getProvinceFromLocalite(value);
-      const regId = getRegionFromLocalite(value);
-      updateFilters({
-        localite: value,
-        departement: depId,
-        province: provId,
-        region: regId
-      });
-    } else {
-      updateFilters({
-        localite: null,
-        departement: null,
-        province: null,
-        region: null
-      });
+      // Trouve d'abord la localité
+      const selectedLocalite = localite.find(l => String(l.id_localite) === String(value));
+      if (selectedLocalite) {
+        // Trouve le département
+        const selectedDep = departements.find(d => String(d.id_departement) === String(selectedLocalite.id_departement));
+        if (selectedDep) {
+          // Trouve la province
+          const selectedProv = provinces.find(p => String(p.id_province) === String(selectedDep.id_province));
+          if (selectedProv) {
+            // Met à jour tous les filtres avec les IDs corrects
+            updateFilters({
+              localite: value,
+              departement: selectedLocalite.id_departement,
+              province: selectedDep.id_province,
+              region: selectedProv.id_region
+            });
+            return;
+          }
+        }
+      }
     }
-  }, [getDepartementFromLocalite, getProvinceFromLocalite, getRegionFromLocalite, updateFilters]);
+    updateFilters({
+      localite: value,
+      departement: null,
+      province: null,
+      region: null
+    });
+  }, [localite, departements, provinces, updateFilters]);
 
   const handleDepartementChange = useCallback((e) => {
     const value = e.target.value || null;
     if (value) {
-      const provId = getProvinceFromDepartement(value);
-      const regId = getRegionFromDepartement(value);
-      updateFilters({
-        departement: value,
-        province: provId,
-        region: regId,
-        localite: null  // Réinitialise la localité
-      });
-    } else {
-      updateFilters({
-        departement: null,
-        province: null,
-        region: null,
-        localite: null
-      });
+      // Trouve d'abord le département
+      const selectedDep = departements.find(d => String(d.id_departement) === String(value));
+      if (selectedDep) {
+        // Trouve la province
+        const selectedProv = provinces.find(p => String(p.id_province) === String(selectedDep.id_province));
+        if (selectedProv) {
+          console.log("Mise à jour des filtres département:", {
+            departement: value,
+            province: selectedProv.id_province,
+            region: selectedProv.id_region
+          });
+          updateFilters({
+            departement: value,
+            province: selectedProv.id_province,
+            region: selectedProv.id_region,
+            localite: null // Réinitialise la localité
+          });
+          return;
+        }
+      }
     }
-  }, [getProvinceFromDepartement, getRegionFromDepartement, updateFilters]);
+    updateFilters({
+      departement: value,
+      province: null,
+      region: null,
+      localite: null
+    });
+  }, [departements, provinces, updateFilters]);
 
   const handleProvinceChange = useCallback((e) => {
     const value = e.target.value || null;
     if (value) {
-      const regId = getRegionFromProvince(value);
-      updateFilters({
-        province: value,
-        region: regId,
-        departement: null,
-        localite: null  // Réinitialise département et localité
-      });
-    } else {
-      updateFilters({
-        province: null,
-        region: null,
-        departement: null,
-        localite: null
-      });
+      // Trouve d'abord la province
+      const selectedProv = provinces.find(p => String(p.id_province) === String(value));
+      if (selectedProv) {
+        console.log("Mise à jour des filtres province:", {
+          province: value,
+          region: selectedProv.id_region
+        });
+        updateFilters({
+          province: value,
+          region: selectedProv.id_region,
+          departement: null,
+          localite: null  // Réinitialise département et localité
+        });
+        return;
+      }
     }
-  }, [getRegionFromProvince, updateFilters]);
+    updateFilters({
+      province: value,
+      region: null,
+      departement: null,
+      localite: null
+    });
+  }, [provinces, updateFilters]);
 
   const handleRegionChange = useCallback((e) => {
     const value = e.target.value || null;
