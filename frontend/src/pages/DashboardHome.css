@@ -22,3 +22,28 @@
   width: 100% !important;
   object-fit: contain;
 }
+
+/* DashboardHome.css */
+.card-chart {
+  height: 300px; /* Hauteur fixe pour tous les graphiques */
+  display: flex;
+  flex-direction: column;
+}
+
+.card-chart h6 {
+  flex: 0 0 auto;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.chart-wrapper {
+  flex: 1 1 auto;
+  min-height: 0; /* Pour que Chart.js s'adapte */
+}
+
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}

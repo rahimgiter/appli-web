@@ -1,0 +1,85 @@
+// Nouveaux gestionnaires de changement
+const handleRegionChange = useCallback((selectedOption) => {
+  setFilters(prev => ({
+    ...prev,
+    region: selectedOption ? selectedOption.value : null,
+    province: null,
+    departement: null,
+    localite: null
+  }));
+}, []);
+
+const handleProvinceChange = useCallback((selectedOption) => {
+  const value = selectedOption ? selectedOption.value : null;
+  if (value) {
+    const selectedProv = provinces.find(p => p.id_province === Number(value));
+    if (selectedProv) {
+      setFilters(prev => ({
+        ...prev,
+        province: value,
+        region: selectedProv.id_region,
+        departement: null,
+        localite: null
+      }));
+      return;
+    }
+  }
+  setFilters(prev => ({
+    ...prev,
+    province: null,
+    departement: null,
+    localite: null
+  }));
+}, [provinces]);
+
+const handleDepartementChange = useCallback((selectedOption) => {
+  const value = selectedOption ? selectedOption.value : null;
+  if (value) {
+    const selectedDep = departements.find(d => d.id_departement === Number(value));
+    if (selectedDep) {
+      const selectedProv = provinces.find(p => p.id_province === selectedDep.id_province);
+      if (selectedProv) {
+        setFilters(prev => ({
+          ...prev,
+          departement: value,
+          province: selectedDep.id_province,
+          region: selectedProv.id_region,
+          localite: null
+        }));
+        return;
+      }
+    }
+  }
+  setFilters(prev => ({
+    ...prev,
+    departement: null,
+    localite: null
+  }));
+}, [departements, provinces]);
+
+const handleLocaliteChange = useCallback((selectedOption) => {
+  const value = selectedOption ? selectedOption.value : null;
+  if (value) {
+    const selectedLocalite = localite.find(l => l.id_localite === Number(value));
+    if (selectedLocalite) {
+      const selectedDep = departements.find(d => d.id_departement === selectedLocalite.id_departement);
+      if (selectedDep) {
+        const selectedProv = provinces.find(p => p.id_province === selectedDep.id_province);
+        if (selectedProv) {
+          setFilters(prev => ({
+            ...prev,
+            localite: value,
+            departement: selectedLocalite.id_departement,
+            province: selectedDep.id_province,
+            region: selectedProv.id_region
+          }));
+          return;
+        }
+      }
+    }
+  }
+  setFilters(prev => ({
+    ...prev,
+    localite: value
+  }));
+}, [localite, departements, provinces]);

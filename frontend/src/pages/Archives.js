@@ -8,7 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import * as bootstrap from 'bootstrap';
 import FormulaireInfos from '../components/FormulaireInfos';
 
-const Archives = ({ onRead = () => {} }) => {
+const Archives = ({ refreshKey = 0 }) => {
   const [archives, setArchives] = useState([]);
   const [selectedForm, setSelectedForm] = useState(null);
   const [formData, setFormData] = useState({});
@@ -19,16 +19,18 @@ const Archives = ({ onRead = () => {} }) => {
   const fetchArchives = async () => {
     try {
       const res = await axios.get('http://localhost/app-web/backend/api/archives.php');
-      setArchives(res.data);
-      onRead();
+      const data = Array.isArray(res.data) ? res.data : [];
+      setArchives(data);
     } catch (err) {
       console.error(err);
+      setArchives([]);
+      toast.error('Impossible de charger les archives.');
     }
   };
 
   useEffect(() => {
     fetchArchives();
-  }, []);
+  }, [refreshKey]);
 
   const handleCardClick = async (form) => {
     setSelectedForm(form);
@@ -40,11 +42,13 @@ const Archives = ({ onRead = () => {} }) => {
       operateurs_internet: form.operateurs_internet?.split(',') || []
     });
 
+    // Charger détails village
     try {
-      const res = await axios.get(`http://localhost/app-web/backend/api/village-details.php?id=${form.id_village}`);
-      setDetails(res.data);
+      const res = await axios.get(`http://localhost/app-web/backend/api/village-details.php?id=${form.id_localite}`);
+      setDetails(res.data || {});
     } catch (e) {
       console.error("Erreur détails village", e);
+      setDetails({});
     }
 
     const modal = new bootstrap.Modal(document.getElementById('archiveModal'));
@@ -52,8 +56,7 @@ const Archives = ({ onRead = () => {} }) => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
-
+    const { name, value, type, checked } = e.target;
     if (name === 'commentaire') {
       const words = value.trim().split(/\s+/).filter(Boolean);
       if (words.length <= 25) {
@@ -81,10 +84,11 @@ const Archives = ({ onRead = () => {} }) => {
     };
 
     axios.post('http://localhost/app-web/backend/api/archives_update.php', updatedData)
-      .then((res) => {
+      .then(res => {
         if (res.data.success) {
           fetchArchives();
           bootstrap.Modal.getInstance(document.getElementById('archiveModal')).hide();
+          toast.success('✅ Formulaire mis à jour.');
         } else {
           toast.error("Erreur lors de l'enregistrement : " + res.data.message);
         }
@@ -95,10 +99,11 @@ const Archives = ({ onRead = () => {} }) => {
   const handleDelete = () => {
     if (window.confirm("Voulez-vous supprimer ce formulaire ?")) {
       axios.post('http://localhost/app-web/backend/api/archives_delete.php', { id: selectedForm.id })
-        .then((res) => {
+        .then(res => {
           if (res.data.success) {
             setArchives(prev => prev.filter(a => a.id !== selectedForm.id));
             bootstrap.Modal.getInstance(document.getElementById('archiveModal')).hide();
+            toast.success('✅ Formulaire supprimé.');
           } else {
             toast.error("Erreur suppression : " + res.data.message);
           }
@@ -109,112 +114,81 @@ const Archives = ({ onRead = () => {} }) => {
 
   return (
     <>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            duration: 4000,
-            style: {
-              background: '#10b981',
-            },
-          },
-          error: {
-            duration: 4000,
-            style: {
-              background: '#ef4444',
-            },
-          },
-        }}
-      />
-      <div className="container mt-4">
-      <h4 className="fw-bold text-primary mb-4">
-        <i className="bi bi-archive-fill me-2"></i>
-        Fichiers enregistrés
-      </h4>
+      <Toaster position="top-right" toastOptions={{
+        duration: 4000,
+        style: { background: '#363636', color: '#fff' },
+        success: { style: { background: '#10b981' } },
+        error: { style: { background: '#ef4444' } },
+      }} />
 
-      <div className="row">
-        {archives.length > 0 ? (
-          archives.map((form) => (
-            <div className="col-md-4 mb-4" key={form.id}>
-              <div className="card archive-card shadow-sm" onClick={() => handleCardClick(form)} style={{ cursor: 'pointer' }}>
-                <div className="card-body text-center">
-                  <i className="bi bi-file-earmark-text-fill fs-1 text-primary"></i>
-                  <h6 className="mt-2 fw-bold">Fichier - {form.nom_village}</h6>
-                  <p className="text-muted small mb-0">{form.created_at}</p>
+      <div className="container mt-4">
+        <h4 className="fw-bold text-primary mb-4">
+          <i className="bi bi-archive-fill me-2"></i>
+          Fichiers enregistrés
+        </h4>
+
+        <div className="row">
+          {archives.length > 0 ? (
+            archives.map(form => (
+              <div className="col-md-4 mb-4" key={form.id}>
+                <div className="card archive-card shadow-sm" onClick={() => handleCardClick(form)} style={{ cursor: 'pointer' }}>
+                  <div className="card-body text-center">
+                    <i className="bi bi-file-earmark-text-fill fs-1 text-primary"></i>
+                    <h6 className="mt-2 fw-bold">Fichier - {form.nom_village || '—'}</h6>
+                    <p className="text-muted small mb-0">{form.created_at || '—'}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-center">Aucun fichier trouvé.</p>
-        )}
-      </div>
+            ))
+          ) : <p className="text-center">Aucun fichier trouvé.</p>}
+        </div>
 
-      {/* 🔽 Modal Bootstrap */}
-      <div className="modal fade" id="archiveModal" tabIndex="-1" aria-labelledby="archiveModalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-lg modal-dialog-centered">
-          <div className="modal-content">
-            {selectedForm && (
-              <>
-                <div className="modal-header">
-                  <h5 className="modal-title">
-                    <i className="bi bi-file-earmark-text me-2"></i>
-                    Formulaire - {selectedForm.nom_village}
-                  </h5>
-                  <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <strong>Commune :</strong> {details.nom_commune} <br />
-                    <strong>Province :</strong> {details.nom_province} <br />
-                    <strong>Région :</strong> {details.nom_region} <br />
-                    <strong>Auteur :</strong> {selectedForm.auteur || '—'} <br />
-                    <strong>Date :</strong> {selectedForm.created_at}
+        <div className="modal fade" id="archiveModal" tabIndex="-1" aria-hidden="true">
+          <div className="modal-dialog modal-lg modal-dialog-centered">
+            <div className="modal-content">
+              {selectedForm && (
+                <>
+                  <div className="modal-header">
+                    <h5 className="modal-title">
+                      <i className="bi bi-file-earmark-text me-2"></i>
+                      Formulaire - {selectedForm.nom_village || '—'}
+                    </h5>
+                    <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
                   </div>
-
-                  <FormulaireInfos
-                    formData={formData}
-                    handleChange={handleChange}
-                    wordCount={wordCount}
-                    editMode={editMode}
-                  />
-                </div>
-
-                <div className="modal-footer">
-                  {editMode ? (
-                    <>
-                      <button className="btn btn-success" onClick={handleUpdate}>
-                        <i className="bi bi-save me-1"></i>Enregistrer
-                      </button>
-                      <button className="btn btn-secondary" onClick={() => setEditMode(false)}>
-                        <i className="bi bi-x-circle me-1"></i>Annuler
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="btn btn-warning" onClick={() => setEditMode(true)}>
-                        <i className="bi bi-pencil-square me-1"></i>Modifier
-                      </button>
-                      <button className="btn btn-danger" onClick={handleDelete}>
-                        <i className="bi bi-trash3 me-1"></i>Supprimer
-                      </button>
-                      <button className="btn btn-secondary" data-bs-dismiss="modal">
-                        <i className="bi bi-x-lg me-1"></i>Fermer
-                      </button>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <strong>Commune :</strong> {selectedForm.nom_commune || '—'} <br />
+                      <strong>Province :</strong> {selectedForm.nom_province || '—'} <br />
+                      <strong>Région :</strong> {selectedForm.nom_region || '—'} <br />
+                      <strong>Auteur :</strong> {selectedForm.auteur || '—'} <br />
+                      <strong>Date :</strong> {selectedForm.created_at || '—'}
+                    </div>
+                    <FormulaireInfos
+                      formData={formData}
+                      handleChange={handleChange}
+                      wordCount={wordCount}
+                      editMode={editMode}
+                    />
+                  </div>
+                  <div className="modal-footer">
+                    {editMode ? (
+                      <>
+                        <button className="btn btn-success" onClick={handleUpdate}><i className="bi bi-save me-1"></i>Enregistrer</button>
+                        <button className="btn btn-secondary" onClick={() => setEditMode(false)}><i className="bi bi-x-circle me-1"></i>Annuler</button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="btn btn-warning" onClick={() => setEditMode(true)}><i className="bi bi-pencil-square me-1"></i>Modifier</button>
+                        <button className="btn btn-danger" onClick={handleDelete}><i className="bi bi-trash3 me-1"></i>Supprimer</button>
+                        <button className="btn btn-secondary" data-bs-dismiss="modal"><i className="bi bi-x-lg me-1"></i>Fermer</button>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </>
   );

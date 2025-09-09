@@ -6,7 +6,7 @@ $conn = new mysqli("localhost", "root", "", "reseau");
 
 $id = $_GET['id'] ?? 0;
 
-$stmt = $conn->prepare("SELECT id FROM ajout_infos WHERE id_village = ?");
+$stmt = $conn->prepare("SELECT id FROM ajout_infos WHERE id_localite = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $res = $stmt->get_result();

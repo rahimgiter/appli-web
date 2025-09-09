@@ -1,65 +1,49 @@
 // src/pages/AjoutInfos.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './AjoutInfos.css';
 
-const AjoutInfos = () => {
+const AjoutInfos = ({ onAdded = () => {} }) => {
   const [villages, setVillages] = useState([]);
   const [villageId, setVillageId] = useState('');
+  const [villageNom, setVillageNom] = useState(''); // ✅ Nouveau : pour stocker le nom du village
   const [search, setSearch] = useState('');
-  const [filteredVillages, setFilteredVillages] = useState([]);
   const [details, setDetails] = useState({});
   const [wordCount, setWordCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    site_2g: '',
-    appel_possible: '',
-    operateurs_appel: [],
-    raison_pas_appel: '',
-    qualite_2g: '',
-    antenne: '',
-    raison_pas_antenne: '',
-    site_3g: '',
-    internet: '',
-    operateurs_internet: [],
-    qualite_internet: '',
-    commentaire: ''
+    site_2g: '', appel_possible: '', operateurs_appel: [], raison_pas_appel: '',
+    qualite_2g: '', antenne: '', raison_pas_antenne: '', site_3g: '',
+    internet: '', operateurs_internet: [], qualite_internet: '', commentaire: ''
   });
 
-  // 🔄 Chargement des villages
+  // Charger les villages
   useEffect(() => {
     axios.get('http://localhost/app-web/backend/api/villages.php')
       .then(res => setVillages(res.data))
-      .catch(err => console.error(err));
+      .catch(() => toast.error('Impossible de charger la liste des villages.'));
   }, []);
 
-  // 🔍 Filtrage dynamique
+  // Charger les détails du village
   useEffect(() => {
-    if (search.length > 0) {
-      const results = villages.filter(v =>
-        v.nom_village.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredVillages(results);
-    } else {
-      setFilteredVillages([]);
-    }
-  }, [search, villages]);
-
-  // ℹ️ Chargement des détails du village sélectionné
-  useEffect(() => {
-    if (villageId) {
-      axios.get(`http://localhost/app-web/backend/api/village-details.php?id=${villageId}`)
-        .then(res => setDetails(res.data))
-        .catch(err => console.error(err));
-    }
+    if (!villageId) return setDetails({});
+    axios.get(`http://localhost/app-web/backend/api/village-details.php?id=${villageId}`)
+      .then(res => setDetails(res.data || {}))
+      .catch(() => toast.error('Impossible de charger les détails du village.'));
   }, [villageId]);
 
-  // 🔁 Gestion des champs
-  const handleChange = e => {
-    const { name, value, type } = e.target;
+  // Filtrage village
+  const filteredVillages = useMemo(() => {
+    if (!search) return [];
+    return villages.filter(v => v.nom_village?.toLowerCase().includes(search.toLowerCase()));
+  }, [search, villages]);
 
+  // Changement formulaire
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     if (name === 'commentaire') {
       const words = value.trim().split(/\s+/).filter(Boolean);
       if (words.length <= 25) {
@@ -67,98 +51,88 @@ const AjoutInfos = () => {
         setWordCount(words.length);
       }
     } else if (type === 'checkbox') {
-      setFormData(prev => {
-        const updated = prev[name].includes(value)
-          ? prev[name].filter(val => val !== value)
-          : [...prev[name], value];
-        return { ...prev, [name]: updated };
-      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked ? [...prev[name], value] : prev[name].filter(v => v !== value)
+      }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  // ✅ Soumission du formulaire
-  const handleSubmit = async e => {
+  // Soumission
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!villageId) {
-      toast.error("Veuillez sélectionner un village avant d’enregistrer.");
-      return;
-    }
+    if (!villageId) return toast.warn('⚠️ Veuillez sélectionner un village.');
+    if (!formData.site_2g || !formData.qualite_2g || !formData.internet || !formData.antenne)
+      return toast.warn('⚠️ Veuillez remplir tous les champs obligatoires.');
+    if (formData.site_2g === 'oui' && formData.appel_possible === 'oui' && formData.operateurs_appel.length === 0)
+      return toast.warn('⚠️ Sélectionnez au moins un opérateur pour les appels.');
+    if (formData.internet === 'oui' && formData.operateurs_internet.length === 0)
+      return toast.warn('⚠️ Sélectionnez au moins un opérateur pour Internet.');
 
-    const payload = {
-      id_village: villageId,
-      ...formData
-    };
-
+    setLoading(true);
     try {
-      const response = await axios.post('http://localhost/app-web/backend/api/ajout_infos.php', payload);
-
-      if (response.data.status === "error") {
-        toast.error("❌ " + response.data.message);
-        return;
+      const res = await axios.post('http://localhost/app-web/backend/api/ajout_infos.php', {
+        id_village: villageId,
+        ...formData
+      });
+      if (res.data.status === 'success') {
+        toast.success('✅ Informations enregistrées !');
+        resetForm();
+        onAdded(); // Rafraîchir Archives
+      } else {
+        toast.error(`❌ ${res.data.message}`);
       }
-
-      toast.success("✅ Informations enregistrées avec succès !");
-      resetForm();
-    } catch (error) {
-      toast.error("Erreur réseau ou serveur !");
-      console.error(error);
+    } catch {
+      toast.error('❌ Une erreur est survenue lors de l\'enregistrement.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ♻️ Réinitialisation du formulaire
   const resetForm = () => {
     setFormData({
-      site_2g: '',
-      appel_possible: '',
-      operateurs_appel: [],
-      raison_pas_appel: '',
-      qualite_2g: '',
-      antenne: '',
-      raison_pas_antenne: '',
-      site_3g: '',
-      internet: '',
-      operateurs_internet: [],
-      qualite_internet: '',
-      commentaire: ''
+      site_2g: '', appel_possible: '', operateurs_appel: [], raison_pas_appel: '',
+      qualite_2g: '', antenne: '', raison_pas_antenne: '', site_3g: '',
+      internet: '', operateurs_internet: [], qualite_internet: '', commentaire: ''
     });
     setWordCount(0);
-    setSearch('');
     setVillageId('');
+    setVillageNom(''); // ✅ reset aussi le nom
+    setSearch('');
     setDetails({});
   };
 
   return (
     <div className="container mt-5">
-      <h4 className="fw-bold mb-4 text-primary text-center">Ajouter une couverture réseau</h4>
+      <h4 className="fw-bold mb-4 text-primary text-center">
+        {villageNom ? `COUVERTURE RESEAU DE  : ${villageNom}` : "COUVERTURE RESEAU"}
+      </h4>
 
       <form onSubmit={handleSubmit} className="shadow p-4 bg-white rounded-4">
-
-        {/* 🔍 Champ recherche village */}
+        {/* Recherche village */}
         <div className="mb-4 position-relative">
-          <label className="form-label fw-semibold">Rechercher un village</label>
+          <label htmlFor="search-village" className="form-label fw-semibold">Rechercher un village</label>
           <input
+            id="search-village"
             type="text"
             className="form-control"
             value={search}
-            placeholder="Commencez à taper..."
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tapez pour rechercher..."
+            onChange={e => setSearch(e.target.value)}
+            autoComplete="off"
           />
           {filteredVillages.length > 0 && (
-            <ul className="list-group position-absolute w-100 zindex-dropdown" style={{ maxHeight: 200, overflowY: 'auto' }}>
+            <ul className="list-group position-absolute w-100" style={{ maxHeight: 200, overflowY: 'auto', zIndex: 1000 }}>
               {filteredVillages.map(v => (
-                <li
-                  key={v.id_village}
-                  className="list-group-item list-group-item-action"
-                  onClick={() => {
-                    setVillageId(v.id_village);
-                    setSearch(v.nom_village);
-                    setFilteredVillages([]);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
+                <li key={v.id_village} className="list-group-item list-group-item-action" style={{ cursor: 'pointer' }}
+                  onClick={() => { 
+                    setVillageId(v.id_village); 
+                    setVillageNom(v.nom_village); // ✅ stocke le nom sélectionné
+                    setSearch(''); 
+                  }}>
                   {v.nom_village}
                 </li>
               ))}
@@ -166,24 +140,27 @@ const AjoutInfos = () => {
           )}
         </div>
 
-        {/* ℹ️ Détails auto-affichés */}
+        {/* Détails village */}
+        {villageId && (
+          <div className="village-details mb-4 p-3 bg-light rounded">
+            <div className="row">
+              <div className="col-md-4"><strong>Commune :</strong> {details.nom_commune || 'N/A'}</div>
+              <div className="col-md-4"><strong>Province :</strong> {details.nom_province || 'N/A'}</div>
+              <div className="col-md-4"><strong>Région :</strong> {details.nom_region || 'N/A'}</div>
+              <div className="col-md-4 mt-2"><strong>Population :</strong> {details.pop_total || 0}</div>
+              <div className="col-md-4 mt-2"><strong>Hommes :</strong> {details.hommes || 0}</div>
+              <div className="col-md-4 mt-2"><strong>Femmes :</strong> {details.femmes || 0}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Formulaire complet */}
         {villageId && (
           <>
-            <div className="row mb-3">
-              <div className="col-md-4"><strong>Commune :</strong> {details.nom_commune}</div>
-              <div className="col-md-4"><strong>Province :</strong> {details.nom_province}</div>
-              <div className="col-md-4"><strong>Région :</strong> {details.nom_region}</div>
-            </div>
-            <div className="row mb-4">
-              <div className="col-md-4"><strong>Population Totale :</strong> {details.pop_total || 0}</div>
-              <div className="col-md-4"><strong>Hommes :</strong> {details.hommes || 0}</div>
-              <div className="col-md-4"><strong>Femmes :</strong> {details.femmes || 0}</div>
-            </div>
-
-            {/* 📋 Questions dynamique 2G */}
+            {/* 2G */}
             <div className="mb-3">
               <label className="form-label">Site couvert par la 2G ?</label>
-              <select name="site_2g" value={formData.site_2g} onChange={handleChange} className="form-select">
+              <select name="site_2g" value={formData.site_2g} onChange={handleChange} className="form-select" required>
                 <option value="">-- Choisir --</option>
                 <option value="oui">Oui</option>
                 <option value="non">Non</option>
@@ -194,7 +171,7 @@ const AjoutInfos = () => {
               <>
                 <div className="mb-3">
                   <label className="form-label">Appel téléphonique possible ?</label>
-                  <select name="appel_possible" value={formData.appel_possible} onChange={handleChange} className="form-select">
+                  <select name="appel_possible" value={formData.appel_possible} onChange={handleChange} className="form-select" required>
                     <option value="">-- Choisir --</option>
                     <option value="oui">Oui</option>
                     <option value="non">Non</option>
@@ -203,18 +180,12 @@ const AjoutInfos = () => {
 
                 {formData.appel_possible === 'oui' && (
                   <div className="mb-3">
-                    <label className="form-label">Compagnies disponibles</label>
+                    <label className="form-label">Opérateurs disponibles</label>
                     {['Orange', 'Onatel', 'Telecel'].map(op => (
                       <div className="form-check" key={op}>
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          name="operateurs_appel"
-                          value={op}
-                          checked={formData.operateurs_appel.includes(op)}
-                          onChange={handleChange}
-                        />
-                        <label className="form-check-label">{op}</label>
+                        <input type="checkbox" name="operateurs_appel" value={op} className="form-check-input"
+                          checked={formData.operateurs_appel.includes(op)} onChange={handleChange} id={`appel-${op}`} />
+                        <label className="form-check-label" htmlFor={`appel-${op}`}>{op}</label>
                       </div>
                     ))}
                   </div>
@@ -222,30 +193,35 @@ const AjoutInfos = () => {
 
                 {formData.appel_possible === 'non' && (
                   <div className="mb-3">
-                    <label className="form-label">Pourquoi ?</label>
+                    <label className="form-label">Pourquoi pas d'appel ?</label>
                     <select name="raison_pas_appel" value={formData.raison_pas_appel} onChange={handleChange} className="form-select">
-                      <option value="">-- Sélectionner --</option>
+                      <option value="">-- Choisir --</option>
                       <option value="incident">Incident</option>
                       <option value="jamais eu d'antenne">Jamais eu d'antenne</option>
+                      <option value="autre">Autre</option>
                     </select>
                   </div>
                 )}
               </>
             )}
 
-            <div className="mb-3">
-              <label className="form-label">Qualité 2G</label>
-              <select name="qualite_2g" value={formData.qualite_2g} onChange={handleChange} className="form-select">
-                <option value="">-- Choisir --</option>
-                <option value="bonne">Bonne</option>
-                <option value="moyenne">Moyenne</option>
-                <option value="mauvaise">Mauvaise</option>
-              </select>
-            </div>
+            {/* Qualité 2G */}
+            {formData.site_2g === 'oui' && (
+              <div className="mb-3">
+                <label className="form-label">Qualité 2G</label>
+                <select name="qualite_2g" value={formData.qualite_2g} onChange={handleChange} className="form-select" required>
+                  <option value="">-- Choisir --</option>
+                  <option value="bonne">Bonne</option>
+                  <option value="moyenne">Moyenne</option>
+                  <option value="mauvaise">Mauvaise</option>
+                </select>
+              </div>
+            )}
 
+            {/* Antenne */}
             <div className="mb-3">
               <label className="form-label">Antenne disponible ?</label>
-              <select name="antenne" value={formData.antenne} onChange={handleChange} className="form-select">
+              <select name="antenne" value={formData.antenne} onChange={handleChange} className="form-select" required>
                 <option value="">-- Choisir --</option>
                 <option value="oui">Oui</option>
                 <option value="non">Non</option>
@@ -254,15 +230,17 @@ const AjoutInfos = () => {
 
             {formData.antenne === 'non' && (
               <div className="mb-3">
-                <label className="form-label">Pourquoi ?</label>
+                <label className="form-label">Pourquoi pas d'antenne ?</label>
                 <select name="raison_pas_antenne" value={formData.raison_pas_antenne} onChange={handleChange} className="form-select">
-                  <option value="">-- Sélectionner --</option>
+                  <option value="">-- Choisir --</option>
                   <option value="incident">Incident</option>
                   <option value="jamais eu d'antenne">Jamais eu d'antenne</option>
+                  <option value="autre">Autre</option>
                 </select>
               </div>
             )}
 
+            {/* 3G */}
             <div className="mb-3">
               <label className="form-label">Site couvert par la 3G ?</label>
               <select name="site_3g" value={formData.site_3g} onChange={handleChange} className="form-select">
@@ -272,9 +250,10 @@ const AjoutInfos = () => {
               </select>
             </div>
 
+            {/* Internet */}
             <div className="mb-3">
               <label className="form-label">Internet disponible ?</label>
-              <select name="internet" value={formData.internet} onChange={handleChange} className="form-select">
+              <select name="internet" value={formData.internet} onChange={handleChange} className="form-select" required>
                 <option value="">-- Choisir --</option>
                 <option value="oui">Oui</option>
                 <option value="non">Non</option>
@@ -287,15 +266,9 @@ const AjoutInfos = () => {
                   <label className="form-label">Opérateurs Internet</label>
                   {['Orange', 'Onatel', 'Telecel'].map(op => (
                     <div className="form-check" key={op}>
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        name="operateurs_internet"
-                        value={op}
-                        checked={formData.operateurs_internet.includes(op)}
-                        onChange={handleChange}
-                      />
-                      <label className="form-check-label">{op}</label>
+                      <input type="checkbox" name="operateurs_internet" value={op} className="form-check-input"
+                        checked={formData.operateurs_internet.includes(op)} onChange={handleChange} id={`internet-${op}`} />
+                      <label className="form-check-label" htmlFor={`internet-${op}`}>{op}</label>
                     </div>
                   ))}
                 </div>
@@ -312,27 +285,21 @@ const AjoutInfos = () => {
               </>
             )}
 
+            {/* Commentaire */}
             <div className="mb-3">
-              <label className="form-label">Commentaire</label>
-              <textarea
-                name="commentaire"
-                className="form-control"
-                rows="3"
-                value={formData.commentaire}
-                onChange={handleChange}
-                placeholder="Votre commentaire (25 mots max)"
-              ></textarea>
-              <div className="form-text text-danger">
-                Nb: Ne pas dépasser 25 mots. ({wordCount}/25)
-              </div>
+              <label className="form-label">Commentaire (max 25 mots)</label>
+              <textarea name="commentaire" value={formData.commentaire} onChange={handleChange} className="form-control" rows={3} />
+              <small className="text-muted">{wordCount}/25 mots</small>
             </div>
 
-            <button className="btn btn-primary w-100 btn-hover">Enregistrer</button>
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+              {loading ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
           </>
         )}
       </form>
 
-      <ToastContainer position="top-right" autoClose={4000} />
+      <ToastContainer position="top-right" autoClose={5000} />
     </div>
   );
 };

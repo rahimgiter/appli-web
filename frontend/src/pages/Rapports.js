@@ -3,24 +3,43 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const Rapport = () => {
+const Rapport = ({ currentUser }) => {
   const [logs, setLogs] = useState([]);
 
-  useEffect(() => {
+  const fetchLogs = () => {
     axios.get("http://localhost/app-web/backend/api/rapports.php")
       .then(res => {
+        console.log("Logs reçus :", res.data);
         if (Array.isArray(res.data)) {
           setLogs(res.data);
         } else {
-          console.error("Réponse invalide :", res.data);
           setLogs([]);
         }
       })
-      .catch(err => {
-        console.error("Erreur lors du chargement des rapports :", err);
-        setLogs([]);
-      });
-  }, []);
+      .catch(err => setLogs([]));
+  };
+
+  useEffect(() => {
+    fetchLogs();
+
+    if (currentUser?.id_utilisateur) {
+      axios.post("http://localhost/app-web/backend/api/rapport_connexion.php", { userId: currentUser.id_utilisateur })
+        .then(() => fetchLogs())
+        .catch(err => console.error(err));
+    }
+
+    const handleUnload = () => {
+      if (currentUser?.id_utilisateur) {
+        navigator.sendBeacon(
+          "http://localhost/app-web/backend/api/rapport_deconnexion.php",
+          JSON.stringify({ userId: currentUser.id_utilisateur })
+        );
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [currentUser]);
 
   return (
     <div className="container mt-4">
@@ -53,7 +72,7 @@ const Rapport = () => {
                   <td>{log.fonction}</td>
                   <td>{log.role}</td>
                   <td>{log.heure_connexion}</td>
-                  <td>{log.heure_deconnexion || <span className="text-danger">Non déconnecté</span>}</td>
+                  <td>{log.heure_deconnexion || ""}</td>
                 </tr>
               ))}
             </tbody>
