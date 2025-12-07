@@ -6,12 +6,23 @@ $id = $_GET['id'] ?? null;
 
 $conn = new mysqli("localhost", "root", "", "reseau");
 
-$res = $conn->query("SELECT * FROM ajout_infos WHERE id_village = '$id' LIMIT 1");
+if ($conn->connect_error) {
+    echo json_encode(["error" => "Erreur de connexion à la base de données"]);
+    exit;
+}
 
-if ($res && $res->num_rows > 0) {
-    echo json_encode($res->fetch_assoc());
+// Version simple (moins sécurisée mais plus proche de l'original)
+if ($id) {
+    $res = $conn->query("SELECT * FROM ajout_infos WHERE id_localite = '$id' LIMIT 1");
+    
+    if ($res && $res->num_rows > 0) {
+        echo json_encode($res->fetch_assoc());
+    } else {
+        echo json_encode([]);
+    }
 } else {
-    echo json_encode([]);
+    echo json_encode(["error" => "ID manquant"]);
 }
 
 $conn->close();
+?>

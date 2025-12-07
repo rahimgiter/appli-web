@@ -1,212 +1,438 @@
-// src/pages/Utilisateurs.js
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import './Utilisateurs.css';
-import toast, { Toaster } from 'react-hot-toast';
 
-const Utilisateurs = () => {
+function Utilisateurs() {
   const [utilisateurs, setUtilisateurs] = useState([]);
-  const [form, setForm] = useState({
-    id_utilisateur: null,
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [notification, setNotification] = useState({ show: false, success: false, message: '' });
+
+  // État du formulaire
+  const [formData, setFormData] = useState({
     nom_famille: '',
     prenom: '',
     fonction: '',
-    identifiant: '',
+    email: '',
     mot_de_passe: '',
-    role: 'utilisateur',
+    role: 'observateur'
   });
-  const [editMode, setEditMode] = useState(false);
-  const [afficherMDP, setAfficherMDP] = useState(false);
 
-  useEffect(() => {
-    fetchUtilisateurs();
-  }, []);
-
-  const fetchUtilisateurs = () => {
-    axios.get('http://localhost/app-web/backend/api/get_utilisateurs.php')
-      .then(res => setUtilisateurs(res.data))
-      .catch(err => console.error(err));
-  };
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const url = editMode
-      ? 'http://localhost/app-web/backend/api/update_utilisateur.php'
-      : 'http://localhost/app-web/backend/api/add_utilisateur.php';
-
-    axios.post(url, form)
-      .then(res => {
-        if (res.data.success) {
-          fetchUtilisateurs();
-          resetForm();
-        } else {
-          toast.error("Erreur : " + res.data.message);
-        }
-      })
-      .catch(err => console.error(err));
-  };
-
-  const handleEdit = (utilisateur) => {
-    setForm(utilisateur);
-    setAfficherMDP(false);
-    setEditMode(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm("Confirmer la suppression de cet utilisateur ?")) {
-      axios.post('http://localhost/app-web/backend/api/delete_utilisateur.php', {
-        id_utilisateur: id
-      })
-        .then(res => {
-          if (res.data.success) {
-            fetchUtilisateurs();
-                  } else {
-          toast.error("Erreur : " + res.data.message);
-        }
-        })
-        .catch(err => console.error(err));
+  // Charger la liste des utilisateurs
+  const chargerUtilisateurs = async () => {
+    setLoading(true);
+    try {
+      console.log('🔄 Chargement des utilisateurs...');
+      const response = await fetch('http://localhost/app-web/backend/api/get_users.php');
+      const result = await response.json();
+      
+      console.log('📦 Réponse reçue:', result);
+      
+      if (result.success) {
+        setUtilisateurs(result.utilisateurs);
+        console.log(`✅ ${result.utilisateurs.length} utilisateurs chargés`);
+      } else {
+        console.error('❌ Erreur chargement:', result.message);
+        setNotification({
+          show: true,
+          success: false,
+          message: result.message || 'Erreur lors du chargement des utilisateurs'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erreur fetch:', error);
+      setNotification({
+        show: true,
+        success: false,
+        message: 'Erreur de connexion au serveur'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setForm({
-      id_utilisateur: null,
+  useEffect(() => {
+    chargerUtilisateurs();
+  }, []);
+
+  // Gérer les changements du formulaire
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Créer un nouvel utilisateur
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      console.log('🔄 Création utilisateur:', formData);
+      const response = await fetch('http://localhost/app-web/backend/api/create_user.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+      console.log('📦 Réponse création:', result);
+
+      if (result.success) {
+        setNotification({
+          show: true,
+          success: true,
+          message: 'Utilisateur créé avec succès !'
+        });
+        setFormData({
+          nom_famille: '',
+          prenom: '',
+          fonction: '',
+          email: '',
+          mot_de_passe: '',
+          role: 'observateur'
+        });
+        setShowForm(false);
+        chargerUtilisateurs();
+      } else {
+        setNotification({
+          show: true,
+          success: false,
+          message: result.message
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erreur création:', error);
+      setNotification({
+        show: true,
+        success: false,
+        message: 'Erreur de connexion au serveur'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Basculer l'état actif/inactif d'un utilisateur
+  const basculerEtatUtilisateur = async (id_utilisateur, nomComplet, estActif) => {
+    const action = estActif ? 'désactiver' : 'réactiver';
+    
+    if (!window.confirm(`Êtes-vous sûr de vouloir ${action} l'utilisateur "${nomComplet}" ?`)) {
+      return;
+    }
+
+    try {
+      const endpoint = estActif 
+        ? 'http://localhost/app-web/backend/api/desactiver_utilisateur.php'
+        : 'http://localhost/app-web/backend/api/reactiver_utilisateur.php';
+
+      console.log(`🔄 ${action} utilisateur ${id_utilisateur}`);
+      console.log('📤 Endpoint:', endpoint);
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id_utilisateur })
+      });
+
+      const result = await response.json();
+      console.log(`📦 Réponse ${action}:`, result);
+
+      if (result.success) {
+        setNotification({
+          show: true,
+          success: true,
+          message: `Utilisateur "${nomComplet}" ${estActif ? 'désactivé' : 'réactivé'} avec succès`
+        });
+        chargerUtilisateurs();
+      } else {
+        setNotification({
+          show: true,
+          success: false,
+          message: result.message
+        });
+      }
+    } catch (error) {
+      console.error(`❌ Erreur ${action}:`, error);
+      setNotification({
+        show: true,
+        success: false,
+        message: 'Erreur de connexion au serveur'
+      });
+    }
+  };
+
+  // Fermer la notification
+  const fermerNotification = () => {
+    setNotification({ show: false, success: false, message: '' });
+  };
+
+  // Réinitialiser le formulaire
+  const reinitialiserFormulaire = () => {
+    setFormData({
       nom_famille: '',
       prenom: '',
       fonction: '',
-      identifiant: '',
+      email: '',
       mot_de_passe: '',
-      role: 'utilisateur',
+      role: 'observateur'
     });
-    setAfficherMDP(false);
-    setEditMode(false);
+    setShowForm(false);
   };
 
   return (
-    <>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            duration: 4000,
-            style: {
-              background: '#10b981',
-            },
-          },
-          error: {
-            duration: 4000,
-            style: {
-              background: '#ef4444',
-            },
-          },
-        }}
-      />
-      <div className="container mt-4">
-      <h4 className="fw-bold text-primary mb-4">
-        <i className="bi bi-people-fill me-2"></i> Gestion des utilisateurs
-      </h4>
+    <div className="utilisateurs-container">
+      <div className="utilisateurs-header">
+        <h2>Gestion des Utilisateurs</h2>
+        <p>Créez et gérez les comptes utilisateurs</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mb-4 shadow-sm p-4 bg-white rounded">
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label>Nom</label>
-            <input type="text" name="nom_famille" value={form.nom_famille} onChange={handleChange} className="form-control" required />
-          </div>
-          <div className="col-md-4 mb-3">
-            <label>Prénom</label>
-            <input type="text" name="prenom" value={form.prenom} onChange={handleChange} className="form-control" required />
-          </div>
-          <div className="col-md-4 mb-3">
-            <label>Fonction</label>
-            <input type="text" name="fonction" value={form.fonction} onChange={handleChange} className="form-control" required />
-          </div>
+      {notification.show && (
+        <div className={`notification ${notification.success ? 'success' : 'error'}`}>
+          <span>{notification.message}</span>
+          <button onClick={fermerNotification} className="notification-close">
+            ×
+          </button>
         </div>
+      )}
 
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label>Identifiant</label>
-            <input type="text" name="identifiant" value={form.identifiant} onChange={handleChange} className="form-control" required />
-          </div>
+      <div className="utilisateurs-actions">
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowForm(!showForm)}
+        >
+          <i className="bi bi-person-plus me-2"></i>
+          {showForm ? 'Annuler' : 'Nouvel Utilisateur'}
+        </button>
+        <button 
+          className="btn btn-outline-secondary"
+          onClick={chargerUtilisateurs}
+          disabled={loading}
+        >
+          <i className="bi bi-arrow-clockwise me-2"></i>
+          Actualiser
+        </button>
+      </div>
 
-          <div className="col-md-4 mb-3">
-            <label>Mot de passe</label>
-            <div className="input-group">
+      {showForm && (
+        <div className="creation-form">
+          <h4>Créer un nouvel utilisateur</h4>
+          <form onSubmit={handleSubmit}>
+            <div className="row">
+              <div className="form-group">
+                <label>Prénom *</label>
+                <input
+                  type="text"
+                  name="prenom"
+                  value={formData.prenom}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  required
+                  placeholder="Jean"
+                />
+              </div>
+              <div className="form-group">
+                <label>Nom de famille *</label>
+                <input
+                  type="text"
+                  name="nom_famille"
+                  value={formData.nom_famille}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  required
+                  placeholder="Dupont"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Fonction *</label>
               <input
-                type={afficherMDP ? 'text' : 'password'}
-                name="mot_de_passe"
-                value={form.mot_de_passe}
-                onChange={handleChange}
+                type="text"
+                name="fonction"
+                value={formData.fonction}
+                onChange={handleInputChange}
                 className="form-control"
                 required
+                placeholder="Chef de projet"
               />
-              <span className="input-group-text" onClick={() => setAfficherMDP(!afficherMDP)} style={{ cursor: 'pointer' }}>
-                <i className={`bi ${afficherMDP ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
-              </span>
             </div>
-          </div>
 
-          <div className="col-md-4 mb-3">
-            <label>Rôle</label>
-            <select name="role" value={form.role} onChange={handleChange} className="form-select">
-              <option value="utilisateur">Utilisateur</option>
-              <option value="admin">Administrateur</option>
-            </select>
+            <div className="form-group">
+              <label>Email *</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="form-control"
+                required
+                placeholder="jean.dupont@example.com"
+              />
+            </div>
+
+            <div className="row">
+              <div className="form-group">
+                <label>Mot de passe *</label>
+                <input
+                  type="password"
+                  name="mot_de_passe"
+                  value={formData.mot_de_passe}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  required
+                  minLength="6"
+                  placeholder="••••••"
+                />
+                <small className="text-muted">Minimum 6 caractères</small>
+              </div>
+              <div className="form-group">
+                <label>Rôle *</label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  required
+                >
+                  <option value="observateur">Observateur</option>
+                  <option value="technicien">Technicien</option>
+                  <option value="admin">Administrateur</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button 
+                type="submit" 
+                className="btn btn-success"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <div className="spinner-border spinner-border-sm me-2"></div>
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check-lg me-2"></i>
+                    Créer l'utilisateur
+                  </>
+                )}
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={reinitialiserFormulaire}
+                disabled={loading}
+              >
+                <i className="bi bi-x-lg me-2"></i>
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="utilisateurs-list">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h4>Liste des Utilisateurs</h4>
+          <div>
+            <span className="badge bg-success me-2">
+              <i className="bi bi-check-circle me-1"></i>
+              {utilisateurs.filter(u => u.actif).length} Actifs
+            </span>
+            <span className="badge bg-secondary">
+              <i className="bi bi-pause-circle me-1"></i>
+              {utilisateurs.filter(u => !u.actif).length} Inactifs
+            </span>
           </div>
         </div>
-
-        <div className="text-end">
-          <button type="submit" className="btn btn-primary">
-            {editMode ? 'Modifier' : 'Créer'}
-          </button>
-          {editMode && <button type="button" className="btn btn-secondary ms-2" onClick={resetForm}>Annuler</button>}
-        </div>
-      </form>
-
-      <table className="table table-bordered table-hover bg-white shadow-sm">
-        <thead className="table-primary">
-          <tr>
-            <th>#</th>
-            <th>Nom</th>
-            <th>Prénom</th>
-            <th>Fonction</th>
-            <th>Identifiant</th>
-            <th>Rôle</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {utilisateurs.map((u, i) => (
-            <tr key={u.id_utilisateur}>
-              <td>{i + 1}</td>
-              <td>{u.nom_famille}</td>
-              <td>{u.prenom}</td>
-              <td>{u.fonction}</td>
-              <td>{u.identifiant}</td>
-              <td>{u.role}</td>
-              <td>
-                <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(u)}>
-                  <i className="bi bi-pencil-square"></i>
-                </button>
-                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(u.id_utilisateur)}>
-                  <i className="bi bi-trash-fill"></i>
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        
+        {loading ? (
+          <div className="text-center">
+            <div className="spinner-border text-primary"></div>
+            <p>Chargement des utilisateurs...</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>Utilisateur</th>
+                  <th>Email</th>
+                  <th>Fonction</th>
+                  <th>Rôle</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {utilisateurs.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center text-muted py-4">
+                      <i className="bi bi-people display-4 d-block mb-2"></i>
+                      Aucun utilisateur trouvé
+                    </td>
+                  </tr>
+                ) : (
+                  utilisateurs.map(utilisateur => (
+                    <tr key={utilisateur.id_utilisateur} className={!utilisateur.actif ? 'table-secondary' : ''}>
+                      <td>
+                        <div>
+                          <strong>{utilisateur.prenom} {utilisateur.nom_famille}</strong>
+                          <br />
+                          <small className="text-muted">#{utilisateur.id_utilisateur}</small>
+                        </div>
+                      </td>
+                      <td>{utilisateur.email}</td>
+                      <td>{utilisateur.fonction}</td>
+                      <td>
+                        <span className={`badge ${
+                          utilisateur.role === 'admin' ? 'bg-danger' :
+                          utilisateur.role === 'technicien' ? 'bg-warning' : 'bg-info'
+                        }`}>
+                          <i className={`bi ${
+                            utilisateur.role === 'admin' ? 'bi-shield-check' :
+                            utilisateur.role === 'technicien' ? 'bi-tools' : 'bi-eye'
+                          } me-1`}></i>
+                          {utilisateur.role}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${utilisateur.actif ? 'bg-success' : 'bg-secondary'}`}>
+                          <i className={`bi ${utilisateur.actif ? 'bi-check-circle' : 'bi-pause-circle'} me-1`}></i>
+                          {utilisateur.actif ? 'Actif' : 'Inactif'}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className={`btn btn-sm ${utilisateur.actif ? 'btn-warning' : 'btn-success'}`}
+                          onClick={() => basculerEtatUtilisateur(
+                            utilisateur.id_utilisateur, 
+                            `${utilisateur.prenom} ${utilisateur.nom_famille}`,
+                            utilisateur.actif
+                          )}
+                          title={utilisateur.actif ? "Désactiver" : "Réactiver"}
+                        >
+                          <i className={`bi ${utilisateur.actif ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
-};
+}
 
 export default Utilisateurs;

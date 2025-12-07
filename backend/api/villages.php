@@ -4,15 +4,23 @@ header("Content-Type: application/json");
 
 $conn = new mysqli("localhost", "root", "", "reseau");
 
-$id_commune = $_GET['id_commune'] ?? null;
+// Vérifier la connexion
+if ($conn->connect_error) {
+    echo json_encode(["error" => "Erreur de connexion à la base de données"]);
+    exit;
+}
 
-if ($id_commune) {
-    $stmt = $conn->prepare("SELECT * FROM village WHERE id_commune = ?");
-    $stmt->bind_param("s", $id_commune);
+$id_departement = $_GET['id_departement'] ?? null;
+
+if ($id_departement) {
+    // Récupérer les localités par département
+    $stmt = $conn->prepare("SELECT * FROM localite WHERE id_departement = ?");
+    $stmt->bind_param("i", $id_departement);
     $stmt->execute();
     $res = $stmt->get_result();
 } else {
-    $res = $conn->query("SELECT * FROM village");
+    // Récupérer toutes les localités
+    $res = $conn->query("SELECT * FROM localite");
 }
 
 $data = [];
@@ -22,3 +30,4 @@ while ($row = $res->fetch_assoc()) {
 
 echo json_encode($data);
 $conn->close();
+?>

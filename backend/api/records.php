@@ -1,108 +1,203 @@
 <?php
-// records.php?table=xxx&page=1&pageSize=50
+// records.php - Gestion complète CRUD pour une table
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Access-Control-Allow-Headers: Content-Type");
 require 'db.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-$table = $_GET['table'] ?? ($_POST['table'] ?? null);
-if (!$table) { http_response_code(400); echo json_encode(['error'=>'table missing']); exit; }
+$table = $_GET['table'] ?? '';
 
-// validate table
-$all = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-if (!in_array($table, $all)) { http_response_code(400); echo json_encode(['error'=>'table not allowed']); exit; }
+// Validation de la table
+if (!$table) {
+    http_response_code(400);
+    echo json_encode(['error' => 'table missing']);
+    exit;
+}
 
-// get schema once
-$cols = $pdo->prepare("DESCRIBE `$table`");
-$cols->execute();
-$columns = $cols->fetchAll(PDO::FETCH_ASSOC);
-$colNames = array_column($columns, 'Field');
-$pkCols = array_values(array_filter($columns, fn($c)=>$c['Key']==='PRI'));
-$pkName = $pkCols[0]['Field'] ?? null;
-
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+// Vérifier que la table existe
+$allTables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+if (!in_array($table, $allTables)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'table not allowed']);
+    exit;
+}
 
 try {
-  if ($method === 'OPTIONS') { http_response_code(200); exit; }
+    switch ($method) {
+        case 'GET':
+            handleGet($pdo, $table);
+            break;
+        case 'POST':
+            handlePost($pdo, $table);
+            break;
+        case 'PUT':
+            handlePut($pdo, $table);
+            break;
+        case 'DELETE':
+            handleDelete($pdo, $table);
+            break;
+        default:
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
+}
 
-  if ($method === 'GET') {
-    $page = max(1, (int)($_GET['page'] ?? 1));
-    $pageSize = min(200, max(1, (int)($_GET['pageSize'] ?? 50)));
-    $offset = ($page-1)*$pageSize;
+// Récupération des données avec pagination
+function handleGet($pdo, $table) {
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $pageSize = min(100, max(1, intval($_GET['pageSize'] ?? 50)));
+    $offset = ($page - 1) * $pageSize;
 
-    $total = $pdo->query("SELECT COUNT(*) FROM `$table`")->fetchColumn();
-    $stmt = $pdo->prepare("SELECT * FROM `$table` LIMIT :offset, :limit");
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
-    $stmt->execute();
+    // Compter le total
+    $countStmt = $pdo->query("SELECT COUNT(*) FROM `$table`");
+    $total = $countStmt->fetchColumn();
+
+    // Récupérer les données
+    $stmt = $pdo->prepare("SELECT * FROM `$table` LIMIT ? OFFSET ?");
+    $stmt->execute([$pageSize, $offset]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode(['total' => (int)$total, 'rows' => $rows]);
-    exit;
-  }
+    echo json_encode([
+        'rows' => $rows,
+        'total' => $total,
+        'page' => $page,
+        'pageSize' => $pageSize
+    ]);
+}
 
-  if ($method === 'POST') {
-    // create
-    $pairs = [];
+// Création d'un nouvel enregistrement
+function handlePost($pdo, $table) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON']);
+        return;
+    }
+
+    $columns = [];
     $placeholders = [];
-    $params = [];
-    foreach ($colNames as $c) {
-      // skip auto_increment if present
-      $meta = array_values(array_filter($columns, fn($m) => $m['Field']===$c))[0];
-      if (strpos($meta['Extra'], 'auto_increment') !== false) continue;
-      if (array_key_exists($c, $input)) {
-        $pairs[] = "`$c`";
-        $placeholders[] = ":$c";
-        $params[":$c"] = $input[$c];
-      }
+    $values = [];
+
+    foreach ($input as $key => $value) {
+        $columns[] = "`$key`";
+        $placeholders[] = "?";
+        $values[] = $value;
     }
-    $sql = "INSERT INTO `$table` (".implode(',', $pairs).") VALUES (".implode(',', $placeholders).")";
+
+    $columnsStr = implode(', ', $columns);
+    $placeholdersStr = implode(', ', $placeholders);
+
+    $sql = "INSERT INTO `$table` ($columnsStr) VALUES ($placeholdersStr)";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $id = $pdo->lastInsertId();
-    echo json_encode(['success'=>true, 'id'=>$id]);
-    exit;
-  }
+    $stmt->execute($values);
 
-  if ($method === 'PUT') {
-    if (!$pkName) { http_response_code(400); echo json_encode(['error'=>'no primary key']); exit; }
-    if (!isset($input[$pkName])) { http_response_code(400); echo json_encode(['error'=>'primary key value missing']); exit; }
+    $lastId = $pdo->lastInsertId();
+    
+    echo json_encode([
+        'success' => true,
+        'id' => $lastId,
+        'message' => 'Record created successfully'
+    ]);
+}
 
-    $sets = [];
-    $params = [];
-    foreach ($colNames as $c) {
-      if ($c === $pkName) continue;
-      if (array_key_exists($c, $input)) {
-        $sets[] = "`$c` = :$c";
-        $params[":$c"] = $input[$c];
-      }
+// Modification d'un enregistrement
+function handlePut($pdo, $table) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON']);
+        return;
     }
-    if (empty($sets)) { echo json_encode(['success'=>false,'message'=>'no fields to update']); exit; }
-    $params[":pk"] = $input[$pkName];
-    $sql = "UPDATE `$table` SET ".implode(',', $sets)." WHERE `$pkName` = :pk";
+
+    // Récupérer la clé primaire
+    $stmt = $pdo->prepare("SHOW KEYS FROM `$table` WHERE Key_name = 'PRIMARY'");
+    $stmt->execute();
+    $primaryKeyInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$primaryKeyInfo) {
+        http_response_code(400);
+        echo json_encode(['error' => 'No primary key found']);
+        return;
+    }
+
+    $pkColumn = $primaryKeyInfo['Column_name'];
+    
+    if (!isset($input[$pkColumn])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Primary key value missing']);
+        return;
+    }
+
+    $pkValue = $input[$pkColumn];
+    unset($input[$pkColumn]);
+
+    $updates = [];
+    $values = [];
+
+    foreach ($input as $key => $value) {
+        $updates[] = "`$key` = ?";
+        $values[] = $value;
+    }
+
+    $values[] = $pkValue; // Pour la clause WHERE
+
+    $updatesStr = implode(', ', $updates);
+    $sql = "UPDATE `$table` SET $updatesStr WHERE `$pkColumn` = ?";
+    
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    echo json_encode(['success'=>true,'affected'=>$stmt->rowCount()]);
-    exit;
-  }
+    $stmt->execute($values);
 
-  if ($method === 'DELETE') {
-    if (!$pkName) { http_response_code(400); echo json_encode(['error'=>'no primary key']); exit; }
+    echo json_encode([
+        'success' => true,
+        'message' => 'Record updated successfully',
+        'affected_rows' => $stmt->rowCount()
+    ]);
+}
 
-    // support pk via query or body
-    $pkVal = $_GET[$pkName] ?? $input[$pkName] ?? null;
-    if ($pkVal === null) { http_response_code(400); echo json_encode(['error'=>'primary key value missing']); exit; }
+// Suppression d'un enregistrement
+function handleDelete($pdo, $table) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON']);
+        return;
+    }
 
-    $stmt = $pdo->prepare("DELETE FROM `$table` WHERE `$pkName` = :pk");
-    $stmt->execute([':pk' => $pkVal]);
-    echo json_encode(['success'=>true,'deleted'=>$stmt->rowCount()]);
-    exit;
-  }
+    // Récupérer la clé primaire
+    $stmt = $pdo->prepare("SHOW KEYS FROM `$table` WHERE Key_name = 'PRIMARY'");
+    $stmt->execute();
+    $primaryKeyInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$primaryKeyInfo) {
+        http_response_code(400);
+        echo json_encode(['error' => 'No primary key found']);
+        return;
+    }
 
-  http_response_code(405);
-  echo json_encode(['error'=>'method not allowed']);
-} catch (Exception $e) {
-  http_response_code(500);
-  echo json_encode(['error'=>$e->getMessage()]);
+    $pkColumn = $primaryKeyInfo['Column_name'];
+    
+    if (!isset($input[$pkColumn])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Primary key value missing']);
+        return;
+    }
+
+    $pkValue = $input[$pkColumn];
+    $sql = "DELETE FROM `$table` WHERE `$pkColumn` = ?";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$pkValue]);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Record deleted successfully',
+        'affected_rows' => $stmt->rowCount()
+    ]);
 }

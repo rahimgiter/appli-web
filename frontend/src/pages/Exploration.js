@@ -5,6 +5,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min';
 import { Modal } from 'bootstrap';
 import FormulaireInfos from '../components/FormulaireInfos';
 import toast, { Toaster } from 'react-hot-toast';
+import './ExplorationRegionale.css';
 
 const ExplorationRegionale = () => {
   const [regions, setRegions] = useState([]);
@@ -18,6 +19,8 @@ const ExplorationRegionale = () => {
 
   const [titre, setTitre] = useState('Toutes les localités');
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [selectedLocalite, setSelectedLocalite] = useState(null);
   const [formData, setFormData] = useState(null);
@@ -25,6 +28,7 @@ const ExplorationRegionale = () => {
   const [wordCount, setWordCount] = useState(0);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [resRegions, resProvinces, resDepartements, resLocalites] = await Promise.all([
         axios.get('http://localhost/app-web/backend/api/regions.php'),
@@ -40,12 +44,22 @@ const ExplorationRegionale = () => {
     } catch (err) {
       console.error('Erreur de chargement des données initiales :', err);
       toast.error('❌ Impossible de charger les données');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Fonction pour actualiser les données
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    toast.success('✅ Données actualisées');
+  };
 
   // Fonctions utilitaires pour la hiérarchie géographique
   const getProvinceFromDepartement = useCallback((depId) => {
@@ -106,6 +120,14 @@ const ExplorationRegionale = () => {
     setSelectedDepartement('');
   }, []);
 
+  // Fonction pour effacer tous les filtres
+  const clearAllFilters = () => {
+    setSelectedRegion('');
+    setSelectedProvince('');
+    setSelectedDepartement('');
+    setSearch('');
+  };
+
   // Mise à jour du titre
   useEffect(() => {
     if (selectedDepartement) {
@@ -124,21 +146,29 @@ const ExplorationRegionale = () => {
 
   // Filtrage des localités
   const getFilteredLocalites = useCallback(() => {
-    if (selectedDepartement) {
-      return localites.filter(l => l.id_departement == selectedDepartement);
-    } else if (selectedProvince) {
-      const depsInProvince = departements.filter(d => d.id_province == selectedProvince);
-      const depIds = depsInProvince.map(d => d.id_departement);
-      return localites.filter(l => depIds.includes(l.id_departement));
-    } else if (selectedRegion) {
-      const provsInRegion = provinces.filter(p => p.id_region == selectedRegion);
-      const provIds = provsInRegion.map(p => p.id_province);
-      const depsInRegion = departements.filter(d => provIds.includes(d.id_province));
-      const depIds = depsInRegion.map(d => d.id_departement);
-      return localites.filter(l => depIds.includes(l.id_departement));
-    }
-    return localites;
-  }, [localites, selectedDepartement, selectedProvince, selectedRegion, departements, provinces]);
+  // Convertir toutes les valeurs en nombres pour éviter les problèmes de type
+  const regionId = parseInt(selectedRegion);
+  const provinceId = parseInt(selectedProvince);
+  const departementId = parseInt(selectedDepartement);
+  
+  if (departementId) {
+    return localites.filter(l => parseInt(l.id_departement) === departementId);
+  } else if (provinceId) {
+    const depsInProvince = departements.filter(d => parseInt(d.id_province) === provinceId);
+    const depIds = depsInProvince.map(d => parseInt(d.id_departement));
+    return localites.filter(l => depIds.includes(parseInt(l.id_departement)));
+  } else if (regionId) {
+    const provsInRegion = provinces.filter(p => parseInt(p.id_region) === regionId);
+    const provIds = provsInRegion.map(p => parseInt(p.id_province));
+    
+    const depsInRegion = departements.filter(d => provIds.includes(parseInt(d.id_province)));
+    const depIds = depsInRegion.map(d => parseInt(d.id_departement));
+    
+    return localites.filter(l => depIds.includes(parseInt(l.id_departement)));
+  }
+  
+  return localites;
+}, [localites, selectedDepartement, selectedProvince, selectedRegion, departements, provinces]);
 
   // ✅ Gestion clic sur localité
   const handleLocaliteClick = async (localite) => {
@@ -272,102 +302,256 @@ const ExplorationRegionale = () => {
         position="top-right"
         toastOptions={{
           duration: 4000,
-          style: { background: '#363636', color: '#fff' },
-          success: { duration: 4000, style: { background: '#10b981' } },
-          error: { duration: 4000, style: { background: '#ef4444' } },
+          style: { 
+            background: '#363636', 
+            color: '#fff',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '500'
+          },
+          success: { 
+            duration: 4000, 
+            style: { 
+              background: '#10b981',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
+            } 
+          },
+          error: { 
+            duration: 4000, 
+            style: { 
+              background: '#ef4444',
+              boxShadow: '0 4px 16px rgba(239, 68, 68, 0.3)'
+            } 
+          },
         }}
       />
-      <div className="container mt-4">
-        <h3 className="fw-bold mb-4 text-primary">🌍 Exploration Régionale</h3>
-
-        <div className="row mb-4">
-          <div className="col-md-4">
-            <label>Région</label>
-            <select className="form-select" value={selectedRegion} onChange={handleRegionChange}>
-              <option value="">-- Choisir une région --</option>
-              {regions.map((r) => (
-                <option key={r.id_region} value={String(r.id_region)}>{r.nom_region}</option>
-              ))}
-            </select>
+      
+      <div className="exploration-container">
+        {/* En-tête */}
+        <div className="exploration-header">
+          <div className="header-content">
+            <i className="bi bi-compass-fill icon-large"></i>
+            <div>
+              <h1 className="page-title">Exploration Régionale</h1>
+              <p className="page-subtitle">Explorez et gérez les données de couverture réseau par région</p>
+            </div>
           </div>
-          <div className="col-md-4">
-            <label>Province</label>
-            <select className="form-select" value={selectedProvince} onChange={handleProvinceChange}>
-              <option value="">-- Choisir une province --</option>
-              {provinces.map((p) => (
-                <option key={p.id_province} value={String(p.id_province)}>{p.nom_province}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-4">
-            <label>Département</label>
-            <select className="form-select" value={selectedDepartement} onChange={handleDepartementChange}>
-              <option value="">-- Choisir un département --</option>
-              {departements.map((d) => (
-                <option key={d.id_departement} value={String(d.id_departement)}>{d.nom_departement}</option>
-              ))}
-            </select>
+          {/* Bouton Actualiser */}
+          <div className="header-actions">
+            <button 
+              className="btn-refresh"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <>
+                  <div className="spinner-small me-2"></div>
+                  Actualisation...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-arrow-clockwise me-2"></i>
+                  Actualiser
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <h5 className="text-muted mb-3">{titre}</h5>
-        <input
-          className="form-control mb-3"
-          placeholder="🔍 Rechercher une localité..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        {/* Contenu principal */}
+        <div className="exploration-content">
+          {/* Filtres - Alternative 1 */}
+          <div className="filters-section">
+            <div className="filters-header">
+              <h3 className="section-title">
+                <i className="bi bi-funnel me-2"></i>
+                Filtres Géographiques
+              </h3>
+              <div className="filters-actions">
+                <button 
+                  className="btn-clear-filters"
+                  onClick={clearAllFilters}
+                >
+                  <i className="bi bi-x-circle me-1"></i>
+                  Effacer
+                </button>
+              </div>
+            </div>
+            
+            <div className="inline-filters">
+              <div className="filter-chip">
+                <label>Région</label>
+                <div className="chip-select">
+                  <i className="bi bi-geo-alt"></i>
+                  <select value={selectedRegion} onChange={handleRegionChange}>
+                    <option value="">Toutes</option>
+                    {regions.map((r) => (
+                      <option key={r.id_region} value={String(r.id_region)}>
+                        {r.nom_region}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-        <div className="table-responsive">
-          <table className="table table-bordered table-striped">
-            <thead className="table-primary text-center">
-              <tr>
-                <th>Nom de la localité</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
-                <th>Hommes</th>
-                <th>Femmes</th>
-                <th>Population Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLocalites.map((l) => (
-                <tr key={l.id_localite} onClick={() => handleLocaliteClick(l)} style={{ cursor: 'pointer' }}>
-                  <td>{l.nom_localite}</td>
-                  <td className="text-center">{l.latitude || 'N/A'}</td>
-                  <td className="text-center">{l.longitude || 'N/A'}</td>
-                  <td className="text-center">{l.hommes || 'N/A'}</td>
-                  <td className="text-center">{l.femmes || 'N/A'}</td>
-                  <td className="text-center fw-bold">{l.pop_total || 'N/A'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              <div className="filter-chip">
+                <label>Province</label>
+                <div className="chip-select">
+                  <i className="bi bi-map"></i>
+                  <select value={selectedProvince} onChange={handleProvinceChange}>
+                    <option value="">Toutes</option>
+                    {provinces.map((p) => (
+                      <option key={p.id_province} value={String(p.id_province)}>
+                        {p.nom_province}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="filter-chip">
+                <label>Département</label>
+                <div className="chip-select">
+                  <i className="bi bi-pin-map"></i>
+                  <select value={selectedDepartement} onChange={handleDepartementChange}>
+                    <option value="">Tous</option>
+                    {departements.map((d) => (
+                      <option key={d.id_departement} value={String(d.id_departement)}>
+                        {d.nom_departement}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Titre et recherche */}
+          <div className="search-section">
+            <div className="title-section">
+              <h3 className="current-title">{titre}</h3>
+              <div className="results-count">
+                {filteredLocalites.length} localité{filteredLocalites.length !== 1 ? 's' : ''} trouvée{filteredLocalites.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+            
+            <div className="search-wrapper">
+              <i className="bi bi-search search-icon"></i>
+              <input
+                className="search-input"
+                placeholder="Rechercher une localité..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Tableau des localités */}
+          {loading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <h3>Chargement des données...</h3>
+              <p>Récupération des informations géographiques</p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <div className="table-responsive">
+                <table className="localites-table">
+                  <thead>
+                    <tr>
+                      <th className="table-header">Nom de la localité</th>
+                      <th className="table-header">Latitude</th>
+                      <th className="table-header">Longitude</th>
+                      <th className="table-header">Hommes</th>
+                      <th className="table-header">Femmes</th>
+                      <th className="table-header">Population Total</th>
+                      <th className="table-header">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLocalites.length > 0 ? (
+                      filteredLocalites.map((l) => (
+                        <tr key={l.id_localite} onClick={() => handleLocaliteClick(l)} className="table-row">
+                          <td className="localite-name">
+                            <i className="bi bi-geo-alt-fill me-2"></i>
+                            {l.nom_localite}
+                          </td>
+                          <td className="text-center">{l.latitude || 'N/A'}</td>
+                          <td className="text-center">{l.longitude || 'N/A'}</td>
+                          <td className="text-center">{l.hommes || 'N/A'}</td>
+                          <td className="text-center">{l.femmes || 'N/A'}</td>
+                          <td className="text-center population-total">
+                            {l.pop_total || 'N/A'}
+                          </td>
+                          <td className="text-center">
+                            <span className="status-badge">
+                              <i className="bi bi-circle-fill me-1"></i>
+                              Non renseigné
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="no-data">
+                          <div className="empty-state">
+                            <i className="bi bi-inbox"></i>
+                            <p>Aucune localité trouvée</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Modal */}
         <div className="modal fade" id="localiteModal" tabIndex="-1" aria-hidden="true">
-          <div className="modal-dialog modal-lg modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  {selectedLocalite?.nom_localite} – {isExisting ? 'Fiche existante' : 'Nouveau formulaire'}
-                </h5>
-                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div className="modal-body">
-                {formData && (
-                  <FormulaireInfos
-                    formData={formData}
-                    handleChange={handleChange}
-                    wordCount={wordCount}
-                    editMode={true}
-                  />
-                )}
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-success" onClick={handleSave}>💾 Enregistrer</button>
-                <button className="btn btn-secondary" data-bs-dismiss="modal">❌ Annuler</button>
-              </div>
+          <div className="modal-dialog modal-xl modal-dialog-centered">
+            <div className="modal-content exploration-modal-content">
+              {selectedLocalite && (
+                <>
+                  <div className="modal-header exploration-modal-header">
+                    <div className="modal-title-section">
+                      <i className="bi bi-file-earmark-text modal-icon"></i>
+                      <div>
+                        <h5 className="modal-title">{selectedLocalite.nom_localite}</h5>
+                        <p className="modal-subtitle">
+                          {isExisting ? 'Modification du formulaire existant' : 'Nouveau formulaire de couverture'}
+                        </p>
+                      </div>
+                    </div>
+                    <button type="button" className="btn-close-modal" data-bs-dismiss="modal">
+                      <i className="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                  
+                  <div className="modal-body exploration-modal-body">
+                    {formData && (
+                      <FormulaireInfos
+                        formData={formData}
+                        handleChange={handleChange}
+                        wordCount={wordCount}
+                        editMode={true}
+                      />
+                    )}
+                  </div>
+                  
+                  <div className="modal-footer exploration-modal-footer">
+                    <button className="btn-save" onClick={handleSave}>
+                      <i className="bi bi-save me-2"></i>
+                      Enregistrer
+                    </button>
+                    <button className="btn-cancel" data-bs-dismiss="modal">
+                      <i className="bi bi-x-circle me-2"></i>
+                      Annuler
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

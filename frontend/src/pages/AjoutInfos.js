@@ -1,14 +1,15 @@
-// src/pages/AjoutInfos.js
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './AjoutInfos.css';
+import { useAuth } from './AuthContext';
 
 const AjoutInfos = ({ onAdded = () => {} }) => {
-  const [villages, setVillages] = useState([]);
-  const [villageId, setVillageId] = useState('');
-  const [villageNom, setVillageNom] = useState(''); // ✅ Nouveau : pour stocker le nom du village
+  const { user, isAuthenticated } = useAuth();
+  const [localites, setLocalites] = useState([]);
+  const [localiteId, setLocaliteId] = useState('');
+  const [localiteNom, setLocaliteNom] = useState('');
   const [search, setSearch] = useState('');
   const [details, setDetails] = useState({});
   const [wordCount, setWordCount] = useState(0);
@@ -20,26 +21,29 @@ const AjoutInfos = ({ onAdded = () => {} }) => {
     internet: '', operateurs_internet: [], qualite_internet: '', commentaire: ''
   });
 
-  // Charger les villages
+  // Charger les localités
   useEffect(() => {
     axios.get('http://localhost/app-web/backend/api/villages.php')
-      .then(res => setVillages(res.data))
-      .catch(() => toast.error('Impossible de charger la liste des villages.'));
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        setLocalites(data);
+      })
+      .catch(() => toast.error('Impossible de charger la liste des localités.'));
   }, []);
 
-  // Charger les détails du village
+  // Charger les détails de la localité
   useEffect(() => {
-    if (!villageId) return setDetails({});
-    axios.get(`http://localhost/app-web/backend/api/village-details.php?id=${villageId}`)
+    if (!localiteId) return setDetails({});
+    axios.get(`http://localhost/app-web/backend/api/village-details.php?id=${localiteId}`)
       .then(res => setDetails(res.data || {}))
-      .catch(() => toast.error('Impossible de charger les détails du village.'));
-  }, [villageId]);
+      .catch(() => toast.error('Impossible de charger les détails de la localité.'));
+  }, [localiteId]);
 
-  // Filtrage village
-  const filteredVillages = useMemo(() => {
-    if (!search) return [];
-    return villages.filter(v => v.nom_village?.toLowerCase().includes(search.toLowerCase()));
-  }, [search, villages]);
+  // Filtrage localité
+  const filteredLocalites = useMemo(() => {
+    if (!search || !Array.isArray(localites)) return [];
+    return localites.filter(v => v.nom_localite?.toLowerCase().includes(search.toLowerCase()));
+  }, [search, localites]);
 
   // Changement formulaire
   const handleChange = (e) => {
@@ -64,7 +68,11 @@ const AjoutInfos = ({ onAdded = () => {} }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!villageId) return toast.warn('⚠️ Veuillez sélectionner un village.');
+    if (!isAuthenticated) {
+      return toast.error('⚠️ Veuillez vous connecter pour enregistrer des données');
+    }
+
+    if (!localiteId) return toast.warn('⚠️ Veuillez sélectionner une localité.');
     if (!formData.site_2g || !formData.qualite_2g || !formData.internet || !formData.antenne)
       return toast.warn('⚠️ Veuillez remplir tous les champs obligatoires.');
     if (formData.site_2g === 'oui' && formData.appel_possible === 'oui' && formData.operateurs_appel.length === 0)
@@ -75,17 +83,20 @@ const AjoutInfos = ({ onAdded = () => {} }) => {
     setLoading(true);
     try {
       const res = await axios.post('http://localhost/app-web/backend/api/ajout_infos.php', {
-        id_village: villageId,
+        id_localite: localiteId,
+        id_utilisateur: user.id_utilisateur,
         ...formData
       });
+      
       if (res.data.status === 'success') {
         toast.success('✅ Informations enregistrées !');
         resetForm();
-        onAdded(); // Rafraîchir Archives
+        onAdded();
       } else {
         toast.error(`❌ ${res.data.message}`);
       }
-    } catch {
+    } catch (error) {
+      console.error('Erreur enregistrement:', error);
       toast.error('❌ Une erreur est survenue lors de l\'enregistrement.');
     } finally {
       setLoading(false);
@@ -99,102 +110,219 @@ const AjoutInfos = ({ onAdded = () => {} }) => {
       internet: '', operateurs_internet: [], qualite_internet: '', commentaire: ''
     });
     setWordCount(0);
-    setVillageId('');
-    setVillageNom(''); // ✅ reset aussi le nom
+    setLocaliteId('');
+    setLocaliteNom('');
     setSearch('');
     setDetails({});
   };
 
   return (
-    <div className="container mt-5">
-      <h4 className="fw-bold mb-4 text-primary text-center">
-        {villageNom ? `COUVERTURE RESEAU DE  : ${villageNom}` : "COUVERTURE RESEAU"}
-      </h4>
-
-      <form onSubmit={handleSubmit} className="shadow p-4 bg-white rounded-4">
-        {/* Recherche village */}
-        <div className="mb-4 position-relative">
-          <label htmlFor="search-village" className="form-label fw-semibold">Rechercher un village</label>
-          <input
-            id="search-village"
-            type="text"
-            className="form-control"
-            value={search}
-            placeholder="Tapez pour rechercher..."
-            onChange={e => setSearch(e.target.value)}
-            autoComplete="off"
-          />
-          {filteredVillages.length > 0 && (
-            <ul className="list-group position-absolute w-100" style={{ maxHeight: 200, overflowY: 'auto', zIndex: 1000 }}>
-              {filteredVillages.map(v => (
-                <li key={v.id_village} className="list-group-item list-group-item-action" style={{ cursor: 'pointer' }}
-                  onClick={() => { 
-                    setVillageId(v.id_village); 
-                    setVillageNom(v.nom_village); // ✅ stocke le nom sélectionné
-                    setSearch(''); 
-                  }}>
-                  {v.nom_village}
-                </li>
-              ))}
-            </ul>
-          )}
+    <div className="ajout-infos-container">
+      <div className="ajout-infos-header">
+        <div className="header-content">
+          <i className="bi bi-wifi icon-large"></i>
+          <div>
+            <h1 className="page-title">
+              {localiteNom ? `Couverture Réseau : ${localiteNom}` : "Couverture Réseau"}
+            </h1>
+            <p className="page-subtitle">
+              {isAuthenticated 
+                ? `Connecté en tant que ${user?.prenom} ${user?.nom_famille}`
+                : "Veuillez vous connecter pour ajouter des informations"
+              }
+            </p>
+          </div>
         </div>
+      </div>
 
-        {/* Détails village */}
-        {villageId && (
-          <div className="village-details mb-4 p-3 bg-light rounded">
-            <div className="row">
-              <div className="col-md-4"><strong>Commune :</strong> {details.nom_commune || 'N/A'}</div>
-              <div className="col-md-4"><strong>Province :</strong> {details.nom_province || 'N/A'}</div>
-              <div className="col-md-4"><strong>Région :</strong> {details.nom_region || 'N/A'}</div>
-              <div className="col-md-4 mt-2"><strong>Population :</strong> {details.pop_total || 0}</div>
-              <div className="col-md-4 mt-2"><strong>Hommes :</strong> {details.hommes || 0}</div>
-              <div className="col-md-4 mt-2"><strong>Femmes :</strong> {details.femmes || 0}</div>
+      {/* Afficher un message si non connecté */}
+      {!isAuthenticated && (
+        <div className="alert-warning">
+          <i className="bi bi-exclamation-triangle"></i>
+          <span>Vous devez être connecté pour ajouter des informations de couverture réseau.</span>
+        </div>
+      )}
+
+      <div className="ajout-infos-content">
+        <form onSubmit={handleSubmit} className="ajout-infos-form">
+          {/* Recherche localité */}
+          <div className="form-section">
+            <h3 className="section-title">
+              <i className="bi bi-search me-2"></i>
+              Sélection de la Localité
+            </h3>
+            
+            <div className={`search-container ${filteredLocalites.length > 0 ? 'has-results' : ''}`}>
+              <label htmlFor="search-localite" className="form-label">Rechercher une localité</label>
+              <div className="search-input-wrapper">
+                <i className="bi bi-search search-icon"></i>
+                <input
+                  id="search-localite"
+                  type="text"
+                  className="search-input"
+                  value={search}
+                  placeholder="Tapez le nom d'une localité..."
+                  onChange={e => setSearch(e.target.value)}
+                  autoComplete="off"
+                  disabled={!isAuthenticated}
+                />
+              </div>
+              
+              {filteredLocalites.length > 0 && (
+                <div className="search-results">
+                  {filteredLocalites.map(v => (
+                    <div 
+                      key={v.id_localite} 
+                      className="search-result-item"
+                      onClick={() => { 
+                        if (isAuthenticated) {
+                          setLocaliteId(v.id_localite); 
+                          setLocaliteNom(v.nom_localite);
+                          setSearch(''); 
+                        }
+                      }}
+                    >
+                      <i className="bi bi-geo-alt me-2"></i>
+                      {v.nom_localite}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Formulaire complet */}
-        {villageId && (
-          <>
-            {/* 2G */}
-            <div className="mb-3">
-              <label className="form-label">Site couvert par la 2G ?</label>
-              <select name="site_2g" value={formData.site_2g} onChange={handleChange} className="form-select" required>
-                <option value="">-- Choisir --</option>
-                <option value="oui">Oui</option>
-                <option value="non">Non</option>
-              </select>
+          {/* Détails localité */}
+          {localiteId && isAuthenticated && (
+            <div className="form-section">
+              <h3 className="section-title">
+                <i className="bi bi-info-circle me-2"></i>
+                Informations de la Localité
+              </h3>
+              
+              <div className="village-details-card">
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Département</span>
+                    <span className="detail-value">{details.nom_departement || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Province</span>
+                    <span className="detail-value">{details.nom_province || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Région</span>
+                    <span className="detail-value">{details.nom_region || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Population Totale</span>
+                    <span className="detail-value highlight">{details.pop_total || 0}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Hommes</span>
+                    <span className="detail-value">{details.hommes || 0}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Femmes</span>
+                    <span className="detail-value">{details.femmes || 0}</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            {formData.site_2g === 'oui' && (
-              <>
-                <div className="mb-3">
-                  <label className="form-label">Appel téléphonique possible ?</label>
-                  <select name="appel_possible" value={formData.appel_possible} onChange={handleChange} className="form-select" required>
+          {/* Formulaire de couverture réseau */}
+          {localiteId && isAuthenticated && (
+            <div className="form-section">
+              <h3 className="section-title">
+                <i className="bi bi-clipboard-data me-2"></i>
+                Informations de Couverture Réseau
+              </h3>
+
+              <div className="form-grid">
+                {/* 2G */}
+                <div className="form-group">
+                  <label className="form-label">Site couvert par la 2G ?</label>
+                  <select name="site_2g" value={formData.site_2g} onChange={handleChange} className="form-select" required>
                     <option value="">-- Choisir --</option>
                     <option value="oui">Oui</option>
                     <option value="non">Non</option>
                   </select>
                 </div>
 
-                {formData.appel_possible === 'oui' && (
-                  <div className="mb-3">
-                    <label className="form-label">Opérateurs disponibles</label>
-                    {['Orange', 'Onatel', 'Telecel'].map(op => (
-                      <div className="form-check" key={op}>
-                        <input type="checkbox" name="operateurs_appel" value={op} className="form-check-input"
-                          checked={formData.operateurs_appel.includes(op)} onChange={handleChange} id={`appel-${op}`} />
-                        <label className="form-check-label" htmlFor={`appel-${op}`}>{op}</label>
+                {formData.site_2g === 'oui' && (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Appel téléphonique possible ?</label>
+                      <select name="appel_possible" value={formData.appel_possible} onChange={handleChange} className="form-select" required>
+                        <option value="">-- Choisir --</option>
+                        <option value="oui">Oui</option>
+                        <option value="non">Non</option>
+                      </select>
+                    </div>
+
+                    {formData.appel_possible === 'oui' && (
+                      <div className="form-group full-width">
+                        <label className="form-label">Opérateurs disponibles pour les appels</label>
+                        <div className="checkbox-group">
+                          {['Orange', 'Onatel', 'Telecel'].map(op => (
+                            <label className="checkbox-label" key={op}>
+                              <input 
+                                type="checkbox" 
+                                name="operateurs_appel" 
+                                value={op} 
+                                className="checkbox-input"
+                                checked={formData.operateurs_appel.includes(op)} 
+                                onChange={handleChange} 
+                              />
+                              <span className="checkbox-custom"></span>
+                              <span className="checkbox-text">{op}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {formData.appel_possible === 'non' && (
+                      <div className="form-group">
+                        <label className="form-label">Pourquoi pas d'appel ?</label>
+                        <select name="raison_pas_appel" value={formData.raison_pas_appel} onChange={handleChange} className="form-select">
+                          <option value="">-- Choisir --</option>
+                          <option value="incident">Incident</option>
+                          <option value="jamais eu d'antenne">Jamais eu d'antenne</option>
+                          <option value="autre">Autre</option>
+                        </select>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Qualité 2G */}
+                {formData.site_2g === 'oui' && (
+                  <div className="form-group">
+                    <label className="form-label">Qualité du signal 2G</label>
+                    <select name="qualite_2g" value={formData.qualite_2g} onChange={handleChange} className="form-select" required>
+                      <option value="">-- Choisir --</option>
+                      <option value="bonne">Bonne</option>
+                      <option value="moyenne">Moyenne</option>
+                      <option value="mauvaise">Mauvaise</option>
+                    </select>
                   </div>
                 )}
 
-                {formData.appel_possible === 'non' && (
-                  <div className="mb-3">
-                    <label className="form-label">Pourquoi pas d'appel ?</label>
-                    <select name="raison_pas_appel" value={formData.raison_pas_appel} onChange={handleChange} className="form-select">
+                {/* Antenne */}
+                <div className="form-group">
+                  <label className="form-label">Antenne disponible ?</label>
+                  <select name="antenne" value={formData.antenne} onChange={handleChange} className="form-select" required>
+                    <option value="">-- Choisir --</option>
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                  </select>
+                </div>
+
+                {formData.antenne === 'non' && (
+                  <div className="form-group">
+                    <label className="form-label">Pourquoi pas d'antenne ?</label>
+                    <select name="raison_pas_antenne" value={formData.raison_pas_antenne} onChange={handleChange} className="form-select">
                       <option value="">-- Choisir --</option>
                       <option value="incident">Incident</option>
                       <option value="jamais eu d'antenne">Jamais eu d'antenne</option>
@@ -202,104 +330,107 @@ const AjoutInfos = ({ onAdded = () => {} }) => {
                     </select>
                   </div>
                 )}
-              </>
-            )}
 
-            {/* Qualité 2G */}
-            {formData.site_2g === 'oui' && (
-              <div className="mb-3">
-                <label className="form-label">Qualité 2G</label>
-                <select name="qualite_2g" value={formData.qualite_2g} onChange={handleChange} className="form-select" required>
-                  <option value="">-- Choisir --</option>
-                  <option value="bonne">Bonne</option>
-                  <option value="moyenne">Moyenne</option>
-                  <option value="mauvaise">Mauvaise</option>
-                </select>
-              </div>
-            )}
-
-            {/* Antenne */}
-            <div className="mb-3">
-              <label className="form-label">Antenne disponible ?</label>
-              <select name="antenne" value={formData.antenne} onChange={handleChange} className="form-select" required>
-                <option value="">-- Choisir --</option>
-                <option value="oui">Oui</option>
-                <option value="non">Non</option>
-              </select>
-            </div>
-
-            {formData.antenne === 'non' && (
-              <div className="mb-3">
-                <label className="form-label">Pourquoi pas d'antenne ?</label>
-                <select name="raison_pas_antenne" value={formData.raison_pas_antenne} onChange={handleChange} className="form-select">
-                  <option value="">-- Choisir --</option>
-                  <option value="incident">Incident</option>
-                  <option value="jamais eu d'antenne">Jamais eu d'antenne</option>
-                  <option value="autre">Autre</option>
-                </select>
-              </div>
-            )}
-
-            {/* 3G */}
-            <div className="mb-3">
-              <label className="form-label">Site couvert par la 3G ?</label>
-              <select name="site_3g" value={formData.site_3g} onChange={handleChange} className="form-select">
-                <option value="">-- Choisir --</option>
-                <option value="oui">Oui</option>
-                <option value="non">Non</option>
-              </select>
-            </div>
-
-            {/* Internet */}
-            <div className="mb-3">
-              <label className="form-label">Internet disponible ?</label>
-              <select name="internet" value={formData.internet} onChange={handleChange} className="form-select" required>
-                <option value="">-- Choisir --</option>
-                <option value="oui">Oui</option>
-                <option value="non">Non</option>
-              </select>
-            </div>
-
-            {formData.internet === 'oui' && (
-              <>
-                <div className="mb-3">
-                  <label className="form-label">Opérateurs Internet</label>
-                  {['Orange', 'Onatel', 'Telecel'].map(op => (
-                    <div className="form-check" key={op}>
-                      <input type="checkbox" name="operateurs_internet" value={op} className="form-check-input"
-                        checked={formData.operateurs_internet.includes(op)} onChange={handleChange} id={`internet-${op}`} />
-                      <label className="form-check-label" htmlFor={`internet-${op}`}>{op}</label>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Qualité Internet</label>
-                  <select name="qualite_internet" value={formData.qualite_internet} onChange={handleChange} className="form-select">
+                {/* 3G */}
+                <div className="form-group">
+                  <label className="form-label">Site couvert par la 3G ?</label>
+                  <select name="site_3g" value={formData.site_3g} onChange={handleChange} className="form-select">
                     <option value="">-- Choisir --</option>
-                    <option value="bonne">Bonne</option>
-                    <option value="moyenne">Moyenne</option>
-                    <option value="mauvaise">Mauvaise</option>
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
                   </select>
                 </div>
-              </>
-            )}
 
-            {/* Commentaire */}
-            <div className="mb-3">
-              <label className="form-label">Commentaire (max 25 mots)</label>
-              <textarea name="commentaire" value={formData.commentaire} onChange={handleChange} className="form-control" rows={3} />
-              <small className="text-muted">{wordCount}/25 mots</small>
+                {/* Internet */}
+                <div className="form-group">
+                  <label className="form-label">Internet disponible ?</label>
+                  <select name="internet" value={formData.internet} onChange={handleChange} className="form-select" required>
+                    <option value="">-- Choisir --</option>
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                  </select>
+                </div>
+
+                {formData.internet === 'oui' && (
+                  <>
+                    <div className="form-group full-width">
+                      <label className="form-label">Opérateurs Internet disponibles</label>
+                      <div className="checkbox-group">
+                        {['Orange', 'Onatel', 'Telecel'].map(op => (
+                          <label className="checkbox-label" key={op}>
+                            <input 
+                              type="checkbox" 
+                              name="operateurs_internet" 
+                              value={op} 
+                              className="checkbox-input"
+                              checked={formData.operateurs_internet.includes(op)} 
+                              onChange={handleChange} 
+                            />
+                            <span className="checkbox-custom"></span>
+                            <span className="checkbox-text">{op}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Qualité Internet</label>
+                      <select name="qualite_internet" value={formData.qualite_internet} onChange={handleChange} className="form-select">
+                        <option value="">-- Choisir --</option>
+                        <option value="bonne">Bonne</option>
+                        <option value="moyenne">Moyenne</option>
+                        <option value="mauvaise">Mauvaise</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {/* Commentaire */}
+                <div className="form-group full-width">
+                  <label className="form-label">
+                    Commentaire 
+                    <span className="word-count">({wordCount}/25 mots)</span>
+                  </label>
+                  <textarea 
+                    name="commentaire" 
+                    value={formData.commentaire} 
+                    onChange={handleChange} 
+                    className="form-textarea" 
+                    rows={3}
+                    placeholder="Ajoutez un commentaire sur la couverture réseau..."
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={resetForm}>
+                  <i className="bi bi-arrow-clockwise me-2"></i>
+                  Réinitialiser
+                </button>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <div className="spinner-small me-2"></div>
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle me-2"></i>
+                      Enregistrer les Informations
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+          )}
+        </form>
+      </div>
 
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-              {loading ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-          </>
-        )}
-      </form>
-
-      <ToastContainer position="top-right" autoClose={5000} />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={5000}
+        theme="colored"
+      />
     </div>
   );
 };

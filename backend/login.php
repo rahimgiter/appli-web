@@ -16,44 +16,64 @@ try {
 
 // Données reçues
 $data = json_decode(file_get_contents("php://input"), true);
-$identifiant = $data['identifiant'] ?? '';
+$email = $data['email'] ?? '';
 $mot_de_passe = $data['mot_de_passe'] ?? '';
 
-if (empty($identifiant) || empty($mot_de_passe)) {
-    echo json_encode(["success" => false, "message" => "Identifiant et mot de passe requis"]);
+// Validation des données
+if (empty($email) || empty($mot_de_passe)) {
+    echo json_encode(["success" => false, "message" => "Email et mot de passe requis"]);
     exit;
 }
 
-// Vérification de l'utilisateur
-$sql = "SELECT * FROM utilisateur WHERE identifiant = ?";
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(["success" => false, "message" => "Format d'email invalide"]);
+    exit;
+}
+
+// Vérification de l'utilisateur par EMAIL
+$sql = "SELECT * FROM utilisateur WHERE email = ? AND actif = 1";
 $stmt = $conn->prepare($sql);
-$stmt->execute([$identifiant]);
+$stmt->execute([$email]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$user || $user['mot_de_passe'] !== $mot_de_passe) {
-    echo json_encode(["success" => false, "message" => "Identifiants incorrects"]);
+if (!$user) {
+    echo json_encode(["success" => false, "message" => "Email ou mot de passe incorrect"]);
     exit;
 }
 
-// Stocker l'ID utilisateur dans la session
+// Vérification du mot de passe HACHÉ
+if (!password_verify($mot_de_passe, $user['mot_de_passe'])) {
+    echo json_encode(["success" => false, "message" => "Email ou mot de passe incorrect"]);
+    exit;
+}
+
+// Connexion réussie - Stocker l'ID utilisateur dans la session
 $_SESSION['id_utilisateur'] = $user['id_utilisateur'];
 
-// Enregistrer l'heure de connexion
-$insert = $conn->prepare("INSERT INTO journal_connexions (id_utilisateur, heure_connexion) VALUES (?, NOW())");
-$insert->execute([$user['id_utilisateur']]);
+// Enregistrer l'heure de connexion (vérifier si la table existe)
+try {
+    $insert = $conn->prepare("INSERT INTO journal_connexions (id_utilisateur, heure_connexion) VALUES (?, NOW())");
+    $insert->execute([$user['id_utilisateur']]);
+    $id_connexion = $conn->lastInsertId();
+    $_SESSION['id_connexion'] = $id_connexion;
+} catch (Exception $e) {
+    // Si la table n'existe pas, on continue sans journaliser
+    $id_connexion = uniqid('conn_', true);
+    $_SESSION['id_connexion'] = $id_connexion;
+}
 
-// Stocker l'id_connexion nouvellement généré pour le logout
-$_SESSION['id_connexion'] = $conn->lastInsertId();
-
-// Réponse
+// Réponse avec les informations utilisateur
 echo json_encode([
     "success" => true,
+    "message" => "Connexion réussie",
     "utilisateur" => [
-        "id" => $user['id_utilisateur'],
-        "nom_complet" => $user['prenom'] . " " . $user['nom_famille'],
+        "id_utilisateur" => $user['id_utilisateur'],
+        "nom_famille" => $user['nom_famille'],
+        "prenom" => $user['prenom'],
         "fonction" => $user['fonction'],
+        "email" => $user['email'],
         "role" => $user['role']
     ],
-    "id_connexion" => $conn->lastInsertId()
+    "id_connexion" => $_SESSION['id_connexion']
 ]);
 ?>

@@ -1,6 +1,9 @@
 <?php
-include 'db.php';
+// CORS EN PREMIER
 require_once 'cors.php';
+
+// DB EN SECOND
+include 'db.php';
 
 $sql = "
     SELECT 
@@ -16,9 +19,15 @@ $sql = "
 try {
     $stmt = $pdo->query($sql);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo json_encode($results);
+    
+    // Header JSON explicite
+    header('Content-Type: application/json; charset=utf-8');
+    
+    echo json_encode($results, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+    
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'Erreur base de données']);
 }
-?>
+// PAS de ?>

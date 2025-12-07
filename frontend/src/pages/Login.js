@@ -1,135 +1,185 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from './AuthContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { FiMapPin, FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiArrowRight } from 'react-icons/fi';
 import './Login.css';
 
 function Login() {
-  const [identifiant, setIdentifiant] = useState("");
+  const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [afficherMotDePasse, setAfficherMotDePasse] = useState(false);
-  const [notification, setNotification] = useState({ show: false, success: false, message: "" });
   const [chargement, setChargement] = useState(false);
-  const [secouer, setSecouer] = useState(false);
+  const [hoverEffect, setHoverEffect] = useState(false);
+  
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!email || !motDePasse) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    if (!email.includes('@')) {
+      toast.error('Format d\'email invalide');
+      return;
+    }
+
     setChargement(true);
 
     try {
-      const response = await axios.post("http://localhost/app-web/backend/login.php", {
-        identifiant: identifiant.trim(),
-        mot_de_passe: motDePasse.trim()
-      });
-
-      if (response.data.success) {
-        setNotification({ show: true, success: true, message: "Connexion réussie !" });
-        localStorage.setItem("utilisateur", JSON.stringify(response.data.utilisateur));
-        localStorage.setItem("id_connexion", response.data.id_connexion);
-        console.log("ID connexion stocké:", response.data.id_connexion);
-        console.log("Réponse complète:", response.data);
+      const result = await login(email.trim().toLowerCase(), motDePasse);
+      
+      if (result.success) {
+        toast.success('Connexion réussie');
         setTimeout(() => {
-          setNotification({ show: false, success: false, message: "" });
           navigate("/dashboard");
         }, 1500);
       } else {
-        setNotification({ show: true, success: false, message: response.data.message || "Identifiants incorrects" });
-        setSecouer(true);
-        setTimeout(() => {
-          setSecouer(false);
-          setNotification({ show: false, success: false, message: "" });
-        }, 2000);
+        toast.error('Identifiants incorrects');
       }
     } catch (error) {
-      setNotification({ show: true, success: false, message: "Erreur serveur" });
-      setSecouer(true);
-      setTimeout(() => {
-        setSecouer(false);
-        setNotification({ show: false, success: false, message: "" });
-      }, 2000);
+      toast.error('Erreur de connexion');
     } finally {
       setChargement(false);
     }
   };
 
   return (
-    <div className="d-flex align-items-center justify-content-center vh-100 bg-light position-relative">
-      {notification.show && (
-        <div className={`popup-notif ${notification.success ? 'success' : 'error'}`}>
-          <i className={`bi ${notification.success ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
-          <span className="ms-2">{notification.message}</span>
-        </div>
-      )}
+    <div className="login-no-scroll">
+      {/* Vagues animées */}
+      <div className="waves">
+        <div className="wave wave-1"></div>
+        <div className="wave wave-2"></div>
+        <div className="wave wave-3"></div>
+      </div>
 
-      <div className={`shadow-lg p-5 bg-white rounded-4 form-box ${secouer ? 'shake' : ''}`} style={{ width: '100%', maxWidth: 400 }}>
-        <div className="text-center mb-4">
-          <h3 className="fw-bold">Connexion</h3>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group mb-3">
-            <label className="form-label">Identifiant</label>
-            <div className="input-group rounded">
-              <span className="input-group-text bg-white">
-                <i className="bi bi-person-fill text-primary"></i>
-              </span>
-              <input
-                type="text"
-                className="form-control rounded-end"
-                value={identifiant}
-                onChange={(e) => setIdentifiant(e.target.value)}
-                placeholder="Votre identifiant"
-                required
-              />
+      {/* Conteneur principal SANS scroll */}
+      <div className="login-compact-container">
+        
+        {/* Header compact */}
+        <div className="login-compact-header">
+          <div className="logo-compact">
+            <div className="logo-circle-white">
+              <FiMapPin className="logo-icon-white" />
             </div>
           </div>
+          <h1 className="brand-name-compact">Couverture360</h1>
+        </div>
 
-          <div className="form-group mb-4">
-            <label className="form-label">Mot de passe</label>
-            <div className="input-group rounded">
-              <span className="input-group-text bg-white">
-                <i className="bi bi-lock-fill text-primary"></i>
-              </span>
-              <input
-                type={afficherMotDePasse ? "text" : "password"}
-                className="form-control"
-                value={motDePasse}
-                onChange={(e) => setMotDePasse(e.target.value)}
-                placeholder="Votre mot de passe"
-                required
-              />
-              <span
-                className="input-group-text bg-white"
-                style={{ cursor: "pointer" }}
-                onClick={() => setAfficherMotDePasse(!afficherMotDePasse)}
+        {/* Grille ultra compacte */}
+        <div className="login-compact-grid">
+          
+          {/* Carte connexion compacte */}
+          <div className="login-compact-card">
+            <div className="login-card-compact-header">
+              <FiMail className="card-icon-white" />
+              <h2>Connexion</h2>
+              <p>Accédez à votre compte</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="login-compact-form">
+              <div className="input-compact-group">
+                <FiMail className="input-icon-white" />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={chargement}
+                />
+              </div>
+
+              <div className="input-compact-group">
+                <FiLock className="input-icon-white" />
+                <input
+                  type={afficherMotDePasse ? "text" : "password"}
+                  placeholder="Mot de passe"
+                  value={motDePasse}
+                  onChange={(e) => setMotDePasse(e.target.value)}
+                  required
+                  disabled={chargement}
+                />
+                <div 
+                  className="password-compact-toggle"
+                  onClick={() => setAfficherMotDePasse(!afficherMotDePasse)}
+                >
+                  {afficherMotDePasse ? <FiEyeOff /> : <FiEye />}
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={chargement} 
+                className="cta-button-white login-compact-btn"
+                onMouseEnter={() => setHoverEffect(true)}
+                onMouseLeave={() => setHoverEffect(false)}
               >
-                <i className={`bi ${afficherMotDePasse ? "bi-eye-slash-fill" : "bi-eye-fill"} text-primary`}></i>
-              </span>
+                {chargement ? (
+                  <div className="login-spinner"></div>
+                ) : (
+                  <>
+                    Se connecter
+                    <FiArrowRight className={`arrow-icon-white ${hoverEffect ? 'slide' : ''}`} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="login-compact-footer">
+              <Link to="/forgot-password" className="login-link-compact">
+                Mot de passe oublié ?
+              </Link>
             </div>
           </div>
 
-          <button type="submit" disabled={chargement} className="btn btn-primary w-100 py-2 rounded-pill">
-            {chargement ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" />
-                Connexion...
-              </>
-            ) : (
-              <>
-                <i className="bi bi-box-arrow-in-right me-2"></i> Se connecter
-              </>
-            )}
-          </button>
-        </form>
+          {/* Séparateur vertical compact */}
+          <div className="login-compact-separator">
+            <div className="separator-dot-compact"></div>
+            <span>OU</span>
+            <div className="separator-dot-compact"></div>
+          </div>
 
-        <div className="text-center mt-3">
-          <small className="text-muted">
-            <i className="bi bi-question-circle me-1"></i>
-            Mot de passe oublié ? Contactez l’administrateur.
-          </small>
+          {/* Carte inscription compacte */}
+          <div className="login-compact-card">
+            <div className="login-card-compact-header">
+              <FiUser className="card-icon-white" />
+              <h2>Nouveau compte</h2>
+              <p>Commencez gratuitement</p>
+            </div>
+
+            <div className="login-card-compact-content">
+              <p>Accédez à toutes les fonctionnalités premium</p>
+              
+              <Link 
+                to="/inscription" 
+                className="cta-button-white secondary-compact-btn"
+                onMouseEnter={() => setHoverEffect(true)}
+                onMouseLeave={() => setHoverEffect(false)}
+              >
+                <FiUser className="btn-icon-white" />
+                Créer un compte
+                <FiArrowRight className={`arrow-icon-white ${hoverEffect ? 'slide' : ''}`} />
+              </Link>
+            </div>
+
+            <div className="login-compact-footer">
+              <span>Copyright l Genious</span>
+            </div>
+          </div>
         </div>
       </div>
+
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        theme="light"
+      />
     </div>
   );
 }

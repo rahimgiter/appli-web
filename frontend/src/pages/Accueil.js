@@ -1,44 +1,100 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button, Container, Row, Col, Spinner } from 'react-bootstrap';
+import { FiMapPin, FiArrowRight } from 'react-icons/fi';
 import './Accueil.css';
 
 function Accueil() {
   const navigate = useNavigate();
   const [showContent, setShowContent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hoverEffect, setHoverEffect] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => setShowContent(true), 300);
+    const timer = setTimeout(() => setShowContent(true), 300);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleStart = () => {
     setLoading(true);
     setTimeout(() => {
       navigate("/login");
-    }, 1000); // 1 secondes
+    }, 1500);
   };
 
   return (
-    <div className="accueil-bg d-flex flex-column justify-content-center align-items-center vh-100 text-white text-center">
-      {loading ? (
-        <div className="text-center">
-          <div className="spinner-border text-light" role="status" style={{ width: '4rem', height: '4rem' }} />
-          <p className="mt-3">Chargement...</p>
-        </div>
-      ) : (
-        <div className={`accueil-content ${showContent ? 'fade-in' : ''}`}>
-          <div className="geo-icon mb-3">
-            <i className="bi bi-geo-fill"></i>
-          </div>
+    <div className="accueil-blue">
+      {/* Vagues animées */}
+      <div className="waves">
+        <div className="wave wave-1"></div>
+        <div className="wave wave-2"></div>
+        <div className="wave wave-3"></div>
+      </div>
+      
+      {/* CONTENEUR FORCÉ AU CENTRE ABSOLU */}
+      <div className="forced-center-container">
+        <div className="forced-center-content">
+          {loading ? (
+            <div className="loading-center">
+              <div className="spinner-center">
+                <Spinner 
+                  animation="border" 
+                  variant="light"
+                  className="spinner-white"
+                />
+              </div>
+              <p className="text-white-50 mb-0">Connexion...</p>
+            </div>
+          ) : (
+            <div className={`content-center ${showContent ? 'fade-in-up' : 'opacity-0'}`}>
+              
+              {/* Logo */}
+              <div className="brand-center">
+                <div className="logo-center">
+                  <div className="logo-circle-white">
+                    <FiMapPin className="logo-icon-white" />
+                  </div>
+                </div>
+                <h1 className="brand-name-center">Couverture360</h1>
+              </div>
 
-          <h6 className="fw-bold text-uppercase text-light opacity-75 mb-2">Couverture360</h6>
-          <h1 className="display-4 mb-3 animate-title">Bienvenue</h1>
-          <p className="lead mb-4">Suivez la couverture réseau à travers le pays</p>
-          <button onClick={handleStart} className="btn btn-outline-light px-5 py-2 rounded-pill fw-semibold start-btn">
-            Démarrer
-          </button>
+              {/* Contenu */}
+              <div className="text-center">
+                <h2 className="slogan-center">
+                  La couverture réseau national en un seul clic !
+                </h2>
+                
+                <p className="description-center">
+                  Découvrez la couverture réseau mobile à l'échelle nationale avec Couverture360.
+                </p>
+
+                {/* Bouton */}
+                <div className="button-center">
+                  <Button
+                    onClick={handleStart}
+                    onMouseEnter={() => setHoverEffect(true)}
+                    onMouseLeave={() => setHoverEffect(false)}
+                    size="lg"
+                    className="cta-button-white px-4 py-2 rounded-pill"
+                    disabled={loading}
+                  >
+                    <span className="button-content d-flex align-items-center justify-content-center gap-2">
+                      {loading ? (
+                        <Spinner animation="border" size="sm" />
+                      ) : (
+                        <>
+                          Se connecter
+                          <FiArrowRight className={`arrow-icon-white ${hoverEffect ? 'slide' : ''}`} />
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
