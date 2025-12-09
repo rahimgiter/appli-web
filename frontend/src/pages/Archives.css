@@ -1,4 +1,4 @@
-/* Archives.css - Même identité visuelle que Dashboard */
+/* Archives.css - Version corrigée */
 .archives-container {
   padding: 0;
   background: #ffffff;
@@ -9,12 +9,16 @@
 /* Import des icônes Bootstrap */
 @import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css');
 
-/* Header avec fond bleu */
+/* Header avec fond bleu - PLUS D'ESPACE EN HAUT */
 .archives-header {
   background: linear-gradient(135deg, #0a66c2, #0847a4);
-  padding: 2rem 2rem 1.5rem;
+  padding: 2rem 2rem 1.5rem; /* Rétabli le padding */
   position: relative;
   color: white;
+  margin-top: 1.5rem; /* ESPACE AJOUTÉ EN HAUT */
+  margin-bottom: 2rem; /* PLUS D'ESPACE EN BAS */
+  border-radius: 0 0 16px 16px; /* Coins arrondis en bas */
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.15); /* Ombre douce */
 }
 
 .archives-header::before {
@@ -53,6 +57,12 @@
   font-weight: 400;
 }
 
+/* ESPACE SUPPLÉMENTAIRE ENTRE LE HEADER ET LE CONTENU */
+.archives-header-spacer {
+  height: 1rem; /* Espace invisible */
+  background: transparent;
+}
+
 /* Alertes */
 .alert-warning {
   display: flex;
@@ -61,10 +71,11 @@
   padding: 1rem 1.5rem;
   background: #fffbeb;
   border: 1px solid #fef3c7;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #92400e;
-  margin: 1rem 2rem;
+  margin: 1rem 2rem 2rem 2rem; /* Plus d'espace en bas */
   font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .alert-warning i {
@@ -72,9 +83,11 @@
   color: #f59e0b;
 }
 
-/* Contenu principal */
+/* Contenu principal - PLUS D'ESPACE EN HAUT */
 .archives-content {
-  padding: 2rem;
+  padding: 1rem 2rem 3rem 2rem; /* Réduit en haut, augmenté en bas */
+  background: #f8fafc; /* Fond léger pour séparer du header */
+  min-height: calc(100vh - 200px); /* Ajuste la hauteur */
 }
 
 /* État de chargement */
@@ -86,6 +99,10 @@
   padding: 4rem 2rem;
   text-align: center;
   min-height: 40vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-top: 1rem; /* Espace au-dessus */
 }
 
 .spinner {
@@ -117,6 +134,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.5rem;
+  margin-top: 1.5rem; /* PLUS D'ESPACE AU-DESSUS */
 }
 
 /* Carte d'archive */
@@ -134,9 +152,9 @@
 }
 
 .archive-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
+  transform: translateY(-3px); /* Légèrement plus prononcé */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  border-color: #0a66c2;
 }
 
 .card-icon {
@@ -154,7 +172,8 @@
 }
 
 .archive-card:hover .card-icon {
-  transform: scale(1.05);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
 }
 
 .card-content {
@@ -206,7 +225,7 @@
 
 .archive-card:hover .card-badge {
   color: #0a66c2;
-  transform: translateX(2px);
+  transform: translateX(4px);
 }
 
 /* État vide */
@@ -215,20 +234,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6rem 2rem;
+  padding: 5rem 2rem;
   text-align: center;
   min-height: 50vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-top: 1.5rem; /* Espace au-dessus */
 }
 
 .empty-icon {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #f8fafc;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #94a3b8;
   font-size: 2rem;
   margin-bottom: 1.5rem;
 }
@@ -248,11 +271,40 @@
 }
 
 /* Modal personnalisé */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2990;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.modal-backdrop-custom.show {
+  opacity: 1;
+}
+
 .archive-modal-content {
   border: none;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 3000;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.modal-dialog {
+  pointer-events: auto !important;
+  max-width: 1000px;
+  margin: 2rem auto; /* PLUS D'ESPACE AUTOUR DU MODAL */
 }
 
 .archive-modal-header {
@@ -261,6 +313,72 @@
   padding: 2rem;
   border-bottom: none;
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-radius: 16px 16px 0 0; /* Coins arrondis en haut */
+}
+
+/* BOUTON DE FERMETURE AMÉLIORÉ - EN ROUGE */
+.archive-modal-header .btn-close {
+  filter: none;
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  border-radius: 50%;
+  font-size: 1.25rem;
+  padding: 0.5rem;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.archive-modal-header .btn-close::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+.archive-modal-header .btn-close:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #dc2626;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+
+.archive-modal-header .btn-close:hover::before {
+  transform: scale(1);
+}
+
+.archive-modal-header .btn-close:active {
+  transform: scale(0.95) rotate(90deg);
+  transition: transform 0.1s ease;
+}
+
+.archive-modal-header .btn-close i {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s ease;
+}
+
+.archive-modal-header .btn-close:hover i {
+  transform: scale(1.2);
 }
 
 .archive-modal-header::before {
@@ -299,31 +417,10 @@
   font-weight: 400;
 }
 
-.btn-close-modal {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 8px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.btn-close-modal:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
 /* Corps du modal */
 .archive-modal-body {
-  padding: 2rem;
-  max-height: 60vh;
+  padding: 2.5rem 2rem 2rem 2rem; /* PLUS D'ESPACE EN HAUT */
+  max-height: 65vh;
   overflow-y: auto;
 }
 
@@ -347,38 +444,48 @@
 /* Sections du modal */
 .village-info-section,
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.village-info-section {
+  padding-top: 0.5rem;
 }
 
 .section-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: #1a202c;
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.5rem 0; /* PLUS D'ESPACE EN BAS */
   display: flex;
   align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb; /* Ligne de séparation */
 }
 
 .section-title i {
   color: #0a66c2;
   font-size: 1rem;
+  margin-right: 0.75rem;
 }
 
 /* Grille d'informations */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem; /* PLUS D'ESPACE ENTRE LES ÉLÉMENTS */
   background: #f8fafc;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 2rem; /* PLUS DE PADDING */
+  margin: 0 auto;
+  max-width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem; /* PLUS D'ESPACE */
 }
 
 .info-label {
@@ -400,6 +507,86 @@
   font-size: 1rem;
 }
 
+/* Conteneur pour FormulaireInfos */
+.form-section .form-container {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem; /* PLUS DE PADDING */
+  margin: 0 auto;
+  max-width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+/* Styles spécifiques pour le formulaire centré */
+.form-section .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -0.75rem;
+}
+
+.form-section .col-md-6,
+.form-section .col-md-12 {
+  padding: 0 0.75rem;
+  margin-bottom: 1.5rem; /* PLUS D'ESPACE */
+}
+
+.form-section .form-group {
+  margin-bottom: 1.5rem; /* PLUS D'ESPACE */
+}
+
+.form-section label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.75rem; /* PLUS D'ESPACE */
+  font-size: 0.9rem;
+}
+
+.form-section .form-control,
+.form-section .form-select {
+  width: 100%;
+  padding: 0.75rem 1rem; /* PLUS DE PADDING */
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background: #ffffff;
+  transition: all 0.2s;
+}
+
+.form-section .form-control:focus,
+.form-section .form-select:focus {
+  outline: none;
+  border-color: #0a66c2;
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
+}
+
+.form-section .checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem; /* PLUS D'ESPACE */
+  margin-top: 0.5rem;
+}
+
+.form-section .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-section .form-check-input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.form-section .form-check-label {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin: 0;
+}
+
 /* Pied du modal */
 .archive-modal-footer {
   background: #f8fafc;
@@ -408,6 +595,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  border-radius: 0 0 16px 16px; /* Coins arrondis en bas */
 }
 
 /* Boutons d'action */
@@ -421,19 +609,20 @@
 .btn-edit,
 .btn-delete,
 .btn-save,
-.btn-cancel,
-.btn-close {
+.btn-cancel {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem; /* LÉGÈREMENT PLUS GRAND */
   border: none;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+  min-width: 180px; /* LÉGÈREMENT PLUS LARGE */
 }
 
 .btn-edit {
@@ -443,7 +632,8 @@
 
 .btn-edit:hover {
   background: #0847a4;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(10, 102, 194, 0.25);
 }
 
 .btn-delete {
@@ -453,7 +643,8 @@
 
 .btn-delete:hover {
   background: #dc2626;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
 }
 
 .btn-save {
@@ -463,7 +654,8 @@
 
 .btn-save:hover {
   background: #059669;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
 }
 
 .btn-cancel {
@@ -473,23 +665,25 @@
 
 .btn-cancel:hover {
   background: #4b5563;
-  transform: translateY(-1px);
-}
-
-.btn-close {
-  background: #6b7280;
-  color: white;
-}
-
-.btn-close:hover {
-  background: #4b5563;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(107, 114, 128, 0.25);
 }
 
 /* Animations */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Effet pulse au survol du bouton de fermeture */
+.archive-modal-header .btn-close:hover {
+  animation: pulse-red 1.5s infinite;
 }
 
 /* Responsive Design */
@@ -499,7 +693,26 @@
   }
   
   .info-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    padding: 1.75rem;
+  }
+  
+  .archive-modal-content {
+    max-width: 900px;
+  }
+}
+
+@media (max-width: 992px) {
+  .archive-modal-content {
+    max-width: 95%;
+  }
+  
+  .form-section .form-container {
+    padding: 1.75rem;
+  }
+  
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -509,7 +722,10 @@
   }
   
   .archives-header {
-    padding: 1.5rem 1rem 1rem;
+    padding: 1.75rem 1.5rem 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0 0 12px 12px;
   }
   
   .header-content {
@@ -519,7 +735,7 @@
   }
   
   .icon-large {
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
   
   .page-title {
@@ -527,31 +743,34 @@
   }
   
   .archives-content {
-    padding: 1rem;
+    padding: 0.75rem 1.5rem 2.5rem 1.5rem;
   }
   
   .archives-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
   }
   
   .archive-card {
-    padding: 1.25rem;
+    padding: 1.5rem;
   }
   
   .card-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.25rem;
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
   }
   
   .archive-modal-body {
-    padding: 1.5rem;
-    max-height: 50vh;
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    max-height: 60vh;
   }
   
   .archive-modal-header {
-    padding: 1.5rem;
+    padding: 1.75rem 1.5rem;
+    align-items: center;
+    border-radius: 12px 12px 0 0;
   }
   
   .modal-title-section {
@@ -565,44 +784,79 @@
   }
   
   .modal-title {
-    font-size: 1.25rem;
+    font-size: 1.35rem;
+  }
+  
+  /* Bouton de fermeture responsive */
+  .archive-modal-header .btn-close {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+    padding: 0.45rem;
   }
   
   .info-grid {
     grid-template-columns: 1fr;
-    padding: 1.25rem;
-    gap: 0.75rem;
+    padding: 1.5rem;
+    gap: 1.25rem;
+  }
+  
+  .form-section .form-container {
+    padding: 1.5rem;
   }
   
   .archive-modal-footer {
-    padding: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 0 12px 12px;
   }
   
   .view-actions,
   .edit-actions {
     flex-direction: column;
     width: 100%;
-    gap: 0.75rem;
+    gap: 0.875rem;
   }
   
   .btn-edit,
   .btn-delete,
   .btn-save,
-  .btn-cancel,
-  .btn-close {
+  .btn-cancel {
     width: 100%;
-    justify-content: center;
+    min-width: auto;
+    padding: 0.875rem 1.5rem;
   }
   
-  .loading-state,
+  .loading-state {
+    padding: 3rem 1.5rem;
+    margin-top: 0.75rem;
+    border-radius: 12px;
+  }
+  
   .empty-state {
-    padding: 3rem 1rem;
+    padding: 4rem 1.5rem;
+    margin-top: 1.25rem;
+    border-radius: 12px;
   }
   
   .empty-icon {
-    width: 70px;
-    height: 70px;
+    width: 72px;
+    height: 72px;
     font-size: 1.75rem;
+  }
+  
+  .section-title {
+    font-size: 1.05rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-section .row {
+    margin: 0 -0.5rem;
+  }
+  
+  .form-section .col-md-6,
+  .form-section .col-md-12 {
+    padding: 0 0.5rem;
+    margin-bottom: 1.25rem;
   }
 }
 
@@ -610,7 +864,7 @@
   .archive-card {
     flex-direction: column;
     text-align: center;
-    gap: 1rem;
+    gap: 1.25rem;
   }
   
   .card-meta {
@@ -618,20 +872,115 @@
   }
   
   .archive-modal-body {
-    padding: 1rem;
+    padding: 1.5rem 1.25rem 1.25rem 1.25rem;
   }
   
   .archive-modal-header {
-    padding: 1.25rem;
+    padding: 1.5rem 1.25rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .archive-modal-header .btn-close {
+    align-self: flex-end;
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+  
+  .modal-title-section {
+    flex-direction: row;
+    text-align: left;
   }
   
   .info-grid {
-    padding: 1rem;
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+  
+  .form-section .form-container {
+    padding: 1.25rem;
   }
   
   .section-title {
     font-size: 1rem;
   }
+  
+  .form-section .checkbox-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+/* Améliorations pour le formulaire en mode édition */
+.edit-mode .form-section .form-control,
+.edit-mode .form-section .form-select,
+.edit-mode .form-section .form-check-input {
+  background: #f9fafb;
+}
+
+/* États focus améliorés */
+.form-section .form-control:focus,
+.form-section .form-select:focus {
+  border-color: #0a66c2;
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.15);
+  background: #ffffff;
+}
+
+/* Transition fluide pour tous les états */
+.archive-card,
+.card-icon,
+.card-badge,
+.btn-edit,
+.btn-delete,
+.btn-save,
+.btn-cancel,
+.form-control,
+.form-select {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Améliorations d'accessibilité */
+.archive-card:focus-visible {
+  outline: 2px solid #0a66c2;
+  outline-offset: 2px;
+}
+
+.btn-edit:focus-visible,
+.btn-delete:focus-visible,
+.btn-save:focus-visible,
+.btn-cancel:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+  outline: 2px solid #0a66c2;
+  outline-offset: 2px;
+}
+
+/* Bouton de fermeture focus visible */
+.archive-modal-header .btn-close:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+}
+
+/* États désactivés */
+.btn-edit:disabled,
+.btn-delete:disabled,
+.btn-save:disabled,
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-edit:disabled:hover,
+.btn-delete:disabled:hover,
+.btn-save:disabled:hover,
+.btn-cancel:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* Support pour le mode sombre */
@@ -674,8 +1023,8 @@
   }
   
   .empty-icon {
-    background: #f8fafc;
-    color: #6b7280;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #94a3b8;
   }
   
   .info-grid {
@@ -705,51 +1054,24 @@
     border-color: #fef3c7;
     color: #92400e;
   }
-}
-
-/* Transitions fluides */
-.archive-card,
-.card-icon,
-.card-badge,
-.btn-close-modal,
-.btn-edit,
-.btn-delete,
-.btn-save,
-.btn-cancel,
-.btn-close {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Améliorations d'accessibilité */
-.archive-card:focus-visible {
-  outline: 2px solid #0a66c2;
-  outline-offset: 2px;
-}
-
-.btn-edit:focus-visible,
-.btn-delete:focus-visible,
-.btn-save:focus-visible,
-.btn-cancel:focus-visible,
-.btn-close:focus-visible {
-  outline: 2px solid #0a66c2;
-  outline-offset: 2px;
-}
-
-/* États désactivés */
-.btn-edit:disabled,
-.btn-delete:disabled,
-.btn-save:disabled,
-.btn-cancel:disabled,
-.btn-close:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-edit:disabled:hover,
-.btn-delete:disabled:hover,
-.btn-save:disabled:hover,
-.btn-cancel:disabled:hover,
-.btn-close:disabled:hover {
-  transform: none;
+  
+  .form-section .form-container {
+    background: #ffffff;
+    border-color: #e5e7eb;
+  }
+  
+  .form-section label {
+    color: #374151;
+  }
+  
+  .form-section .form-control,
+  .form-section .form-select {
+    background: #ffffff;
+    color: #1f2937;
+    border-color: #d1d5db;
+  }
+  
+  .form-section .form-check-label {
+    color: #4b5563;
+  }
 }

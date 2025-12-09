@@ -636,3 +636,44 @@
     border-color: rgba(10, 102, 194, 0.08);
   }
 }
+
+/* ===== FIX MODAL BOOTSTRAP AU-DESSUS DU DASHBOARD ===== */
+.modal {
+  z-index: 3000 !important;
+  position: fixed !important;
+}
+
+.modal-backdrop {
+  z-index: 2990 !important;
+  pointer-events: none !important;
+}
+
+.modal.show .modal-backdrop {
+  pointer-events: none !important;
+}
+
+.modal-dialog {
+  pointer-events: auto !important;
+}
+
+.modal-content {
+  pointer-events: auto !important;
+}
+
+/* On neutralise les contextes d’empilement gênants */
+.dashboard-layout,
+.main-area,
+.content-wrapper {
+  transform: none !important;
+  filter: none !important;
+}
+
+/* L’overlay mobile ne doit JAMAIS bloquer le modal */
+.mobile-sidebar-overlay {
+  z-index: 900 !important;
+  pointer-events: none;
+}
+
+.mobile-sidebar-overlay.active {
+  pointer-events: auto;
+}
