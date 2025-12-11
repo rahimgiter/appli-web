@@ -1,8 +1,18 @@
 <?php
 // records.php - Gestion complète CRUD pour une table
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+
+// Configuration CORS - À PLACER TOUT EN HAUT
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Credentials: true");
+
+// Gérer les requêtes OPTIONS (preflight)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 require 'db.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -16,10 +26,16 @@ if (!$table) {
 }
 
 // Vérifier que la table existe
-$allTables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-if (!in_array($table, $allTables)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'table not allowed']);
+try {
+    $allTables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array($table, $allTables)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'table not allowed']);
+        exit;
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
     exit;
 }
 
